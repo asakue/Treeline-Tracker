@@ -93,7 +93,7 @@ export default function AppLayout() {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         {!isMobile && <DesktopSidebar />}
-        <div className="flex-1 relative overflow-y-hidden pb-16 md:pb-0">
+        <div className="flex-1 relative overflow-y-auto pb-16 md:pb-0">
           <React.Suspense fallback={<ViewLoader />}>
             {renderMainContent()}
           </React.Suspense>
