@@ -81,7 +81,7 @@ export default function AppLayout() {
             <MapView {...viewProps}/>
         </div>
         {currentView && (
-            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm overflow-y-auto">
+            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm overflow-y-auto pb-16 md:pb-0 animate-fade-in">
                 {currentView}
             </div>
         )}
@@ -93,7 +93,7 @@ export default function AppLayout() {
     <SidebarProvider>
       <div className="flex h-screen w-full bg-background">
         {!isMobile && <DesktopSidebar />}
-        <div className="flex-1 relative overflow-y-auto pb-16 md:pb-0">
+        <div className="flex-1 relative overflow-y-auto">
           <React.Suspense fallback={<ViewLoader />}>
             {renderMainContent()}
           </React.Suspense>

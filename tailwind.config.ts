@@ -7,6 +7,9 @@ export default {
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/views/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/features/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/shared/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -117,6 +120,10 @@ export default {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        'fade-in': {
+            '0%': { opacity: '0' },
+            '100%': { opacity: '1' },
+        },
          'fade-in-slow': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
@@ -137,6 +144,7 @@ export default {
         'sos-blink': 'sos-blink 5s infinite',
         'gradient-move': 'gradient-move 15s ease infinite',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
+        'fade-in': 'fade-in 0.3s ease-out forwards',
         'fade-in-slow': 'fade-in-slow 1s ease-out forwards',
         'pulse-slow': 'pulse-slow 3s infinite ease-in-out',
         'fade-in-up-long': 'fade-in-up-long 1.5s ease-out forwards',
