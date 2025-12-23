@@ -1,0 +1,112 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 158 79% 39%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 45 93% 47%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 158 79% 39%;
+    --chart-1: 158 79% 39%;
+    --chart-2: 45 93% 47%;
+    --chart-3: 25 95% 53%;
+    --chart-4: 285 90% 55%;
+    --chart-5: 195 95% 45%;
+    --radius: 0.75rem;
+    --sidebar-background: 210 40% 98%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 158 79% 39%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 90%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 158 79% 39%;
+  }
+
+  .dark {
+    --background: 220 25% 10%;
+    --foreground: 210 20% 90%;
+    --card: 220 25% 15%;
+    --card-foreground: 210 20% 90%;
+    --popover: 220 25% 10%;
+    --popover-foreground: 210 20% 90%;
+    --primary: 158 89% 40%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 220 25% 20%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 220 25% 20%;
+    --muted-foreground: 210 20% 65%;
+    --accent: 45 93% 55%;
+    --accent-foreground: 215 25% 27%;
+    --destructive: 0 63% 51%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 220 25% 25%;
+    --input: 220 25% 30%;
+    --ring: 158 89% 40%;
+    --sidebar-background: 220 25% 15%;
+    --sidebar-foreground: 215 25% 88%;
+    --sidebar-primary: 158 89% 40%;
+    --sidebar-primary-foreground: 210 20% 98%;
+    --sidebar-accent: 220 25% 22%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 220 25% 20%;
+    --sidebar-ring: 158 89% 40%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  .sos-blink-animation {
+    animation: sos-blink 5s infinite;
+  }
+
+  @keyframes sos-blink {
+    /* S */
+    0%, 3%, 6%, 9%, 12%, 15% { background-color: white; }
+    1.5%, 4.5%, 7.5%, 10.5%, 13.5%, 18% { background-color: black; }
+    
+    /* O */
+    21%, 27%, 33%, 39% { background-color: white; }
+    24%, 30%, 36%, 42% { background-color: black; }
+    
+    /* S */
+    45%, 48%, 51%, 54%, 57%, 60% { background-color: white; }
+    46.5%, 49.5%, 52.5%, 55.5%, 58.5%, 63% { background-color: black; }
+
+    100% { background-color: black; }
+  }
+}
+
+    
