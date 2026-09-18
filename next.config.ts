@@ -1,5 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
+  serverExternalPackages: [
+    'genkit',
+    '@genkit-ai/google-genai',
+    '@genkit-ai/core',
+    '@opentelemetry/sdk-node',
+    '@opentelemetry/instrumentation',
+  ],
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -19,3 +27,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+

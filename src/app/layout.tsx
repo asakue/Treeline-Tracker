@@ -17,7 +17,10 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
        <head>
-        <title>Дозор</title>
+        <title>Treeline Tracker</title>
+        <meta name="description" content="Hiking group tracking, route planning, weather forecast, emergency services, and lost hiker search tool with AI recommendations." />
+        <meta property="og:title" content="Treeline Tracker" />
+        <meta property="og:description" content="Hiking group tracking, route planning, weather forecast, emergency services, and lost hiker search tool with AI recommendations." />
         <link rel="icon" href="/favicon.svg" sizes="any" />
       </head>
       <body

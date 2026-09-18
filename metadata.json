@@ -1,0 +1,10 @@
+{
+  "name": "Treeline Tracker",
+  "description": "Hiking group tracking, route planning, weather forecast, emergency services, and lost hiker search tool with AI recommendations.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
