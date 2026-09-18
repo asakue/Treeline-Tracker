@@ -106,18 +106,31 @@ export default function AboutApp() {
                 <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-mono">
                   {updatesLog.trim().split('\n').map((line, index) => {
                       if (line.startsWith('## ')) {
-                        return <h2 key={index} className="text-xl font-bold mt-4 mb-2">{line.substring(3)}</h2>;
+                        return <h2 key={index} className="text-xl font-bold mt-4 mb-2 text-foreground">{line.substring(3)}</h2>;
                       }
                       if (line.startsWith('### ')) {
-                        return <h3 key={index} className="text-lg font-semibold mt-3 mb-1">{line.substring(4)}</h3>;
+                        return <h3 key={index} className="text-lg font-semibold mt-3 mb-1 text-primary">{line.substring(4)}</h3>;
                       }
-                       if (line.startsWith('- **')) {
-                        const boldEnd = line.indexOf('**', 3);
-                        const boldText = line.substring(3, boldEnd);
-                        const restText = line.substring(boldEnd + 2);
-                        return <p key={index} className="my-1.5"><strong className="text-foreground">{boldText}</strong>{restText}</p>;
+                      if (line.startsWith('- **')) {
+                        const boldEnd = line.indexOf('**', 4);
+                        if (boldEnd !== -1) {
+                          const boldText = line.substring(4, boldEnd);
+                          const restText = line.substring(boldEnd + 2);
+                          return (
+                            <p key={index} className="my-1.5 pl-2 border-l-2 border-primary/40">
+                              <strong className="text-foreground">{boldText}</strong>
+                              {restText}
+                            </p>
+                          );
+                        }
                       }
-                      return <p key={index} className="my-1">{line}</p>;
+                      if (line.startsWith('- ')) {
+                        return <p key={index} className="my-1.5 pl-2 border-l-2 border-muted">{line.substring(2)}</p>;
+                      }
+                      if (!line.trim()) {
+                        return <div key={index} className="h-2" />;
+                      }
+                      return <p key={index} className="my-1 text-muted-foreground">{line}</p>;
                     })}
                 </div>
               )}
