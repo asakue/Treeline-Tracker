@@ -99,7 +99,7 @@ const DesktopSidebar = memo(() => {
       <SidebarContent className="flex flex-col p-2">
         <SidebarMenu>
           {menuItems.map(({ id, icon: Icon, label, tooltip }) => (
-            <SidebarMenuItem key={id}>
+            <SidebarMenuItem key={`desktop-nav-${id}`}>
               <SidebarMenuButton
                 onClick={() => setView(id)}
                 isActive={activeView === id}
@@ -115,7 +115,7 @@ const DesktopSidebar = memo(() => {
           <SidebarSeparator key="sidebar-menu-separator" className="my-2" />
           {secondaryMenuItems.map(
             ({ id, icon: Icon, label, tooltip }) => (
-              <SidebarMenuItem key={id}>
+              <SidebarMenuItem key={`desktop-sec-${id}`}>
                 <SidebarMenuButton
                   onClick={() => setView(id)}
                   isActive={activeView === id}

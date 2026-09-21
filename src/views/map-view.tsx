@@ -289,44 +289,44 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   }, [mapOverlays, removeMapOverlay, setView]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full isolate z-0">
       <div ref={mapContainerRef} className="h-full w-full z-0" />
 
       {/* Floating Active Group & Security Indicator */}
       {activeGroup && (
-        <div className="absolute top-4 left-14 z-[1000] hidden sm:flex items-center gap-2 bg-card/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-border shadow-md">
-          <Users className="size-4 text-primary" />
-          <span className="text-xs font-semibold text-foreground max-w-[140px] truncate">{activeGroup.name}</span>
-          <span className="text-muted-foreground">•</span>
-          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-            <ShieldCheck className="size-3.5 text-emerald-500" />
+        <div className="absolute top-3 left-12 sm:top-4 sm:left-14 z-[1000] flex items-center gap-1.5 sm:gap-2 bg-card/90 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border shadow-md max-w-[170px] sm:max-w-[240px]">
+          <Users className="size-3.5 sm:size-4 text-primary shrink-0" />
+          <span className="text-xs font-semibold text-foreground truncate">{activeGroup.name}</span>
+          <span className="text-muted-foreground hidden sm:inline">•</span>
+          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
+            <ShieldCheck className="size-3 sm:size-3.5 text-emerald-500" />
             E2EE
           </span>
         </div>
       )}
 
       {/* Floating Map Layers Control */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] flex flex-col items-end gap-2">
         <Button
           variant="secondary"
           size="sm"
           onClick={() => setShowLayerMenu(!showLayerMenu)}
-          className="shadow-md bg-card/90 backdrop-blur-sm border border-border gap-2 text-xs h-9"
+          className="shadow-md bg-card/90 backdrop-blur-sm border border-border gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3"
           title="Выбрать стиль карты и рельеф"
         >
-          <Layers className="size-4 text-primary" />
+          <Layers className="size-3.5 sm:size-4 text-primary" />
           <span className="hidden sm:inline font-medium">
             {MAP_LAYERS[currentLayerId]?.name.split(' ')[0] || 'Слои карты'}
           </span>
           {MAP_LAYERS[currentLayerId]?.isTopographic && (
-            <Badge variant="outline" className="px-1 py-0 text-[10px] bg-primary/10 text-primary border-primary/20">
+            <Badge variant="outline" className="px-1 py-0 text-[9px] sm:text-[10px] bg-primary/10 text-primary border-primary/20">
               DEM
             </Badge>
           )}
         </Button>
 
         {showLayerMenu && (
-          <div className="w-72 p-3 rounded-lg shadow-xl bg-card/95 backdrop-blur-md border border-border space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="w-[calc(100vw-24px)] max-w-xs sm:w-72 p-2.5 sm:p-3 rounded-lg shadow-xl bg-card/95 backdrop-blur-md border border-border space-y-2 animate-in fade-in slide-in-from-top-2 duration-200 right-0">
             <div className="flex items-center justify-between pb-1 border-b border-border/50">
               <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <Mountain className="size-3.5 text-primary" />

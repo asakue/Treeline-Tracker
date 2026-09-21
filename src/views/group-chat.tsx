@@ -133,21 +133,22 @@ export default function GroupChat() {
   const selectedGroup = groups.find((g) => g.id === selectedGroupId);
 
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="h-full flex flex-col bg-background pb-16 md:pb-0">
       {/* Header */}
-      <div className="border-b p-4 shrink-0 z-10 bg-background space-y-2">
+      <div className="border-b p-3 sm:p-4 shrink-0 z-10 bg-background space-y-1.5 sm:space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <h2 className="text-lg font-semibold truncate">
+            <h2 className="text-base sm:text-lg font-semibold truncate">
               {selectedGroup?.name || 'Выберите группу'}
             </h2>
-            <Badge variant="outline" className="hidden sm:inline-flex items-center gap-1 text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shrink-0">
+            <Badge variant="outline" className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shrink-0">
               <ShieldCheck className="size-3 text-emerald-500" />
-              E2EE AES-256
+              <span>E2EE</span>
+              <span className="hidden sm:inline">AES-256</span>
             </Badge>
           </div>
           <Select value={selectedGroupId} onValueChange={handleGroupChange}>
-            <SelectTrigger className="w-full sm:w-[250px]">
+            <SelectTrigger className="w-full sm:w-[250px] h-9 text-xs sm:text-sm">
               <SelectValue placeholder="Выберите группу" />
             </SelectTrigger>
             <SelectContent>
@@ -161,14 +162,15 @@ export default function GroupChat() {
         </div>
 
         {/* E2EE Info Strip */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-md border border-border/40">
+        <div className="flex items-center justify-between text-[11px] sm:text-xs text-muted-foreground bg-muted/40 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md border border-border/40">
           <div className="flex items-center gap-1.5 truncate">
-            <Lock className="size-3.5 text-emerald-500 shrink-0" />
-            <span className="truncate">Сообщения защищены сквозным шифрованием (AES-256-GCM + Ed25519)</span>
+            <Lock className="size-3 sm:size-3.5 text-emerald-500 shrink-0" />
+            <span className="truncate hidden sm:inline">Сообщения защищены сквозным шифрованием (AES-256-GCM + Ed25519)</span>
+            <span className="truncate sm:hidden">Сквозное E2EE шифрование (AES-256-GCM)</span>
           </div>
-          <div className="hidden md:flex items-center gap-1 text-[10px] font-mono text-muted-foreground/80 shrink-0 ml-2">
-            <KeyRound className="size-3 text-primary" />
-            <span>Ключ группы #{selectedGroupId?.slice(-4) || 'mesh'}</span>
+          <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-mono text-muted-foreground/80 shrink-0 ml-1.5">
+            <KeyRound className="size-2.5 sm:size-3 text-primary" />
+            <span>#{selectedGroupId?.slice(-4) || 'mesh'}</span>
           </div>
         </div>
       </div>

@@ -179,15 +179,16 @@ export default function LocationTracker() {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <Card className="bg-card border-border shadow-sm">
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <CardTitle className="flex items-center gap-3">
-               <Users className="size-6 text-primary"/>
+            <CardTitle className="flex items-center gap-2.5 sm:gap-3 text-lg sm:text-xl">
+               <Users className="size-5 sm:size-6 text-primary shrink-0"/>
                Трекер группы
             </CardTitle>
-            <Badge variant="outline" className="w-max text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 flex items-center gap-1">
-              <ShieldCheck className="size-3 text-emerald-500" />
-              E2EE Mesh (Ed25519 + AES-256)
+            <Badge variant="outline" className="w-max text-[10px] sm:text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 flex items-center gap-1">
+              <ShieldCheck className="size-3 text-emerald-500 shrink-0" />
+              <span>E2EE Mesh</span>
+              <span className="hidden sm:inline">(Ed25519 + AES-256)</span>
             </Badge>
           </div>
            {selectedGroup && (
@@ -258,8 +259,8 @@ export default function LocationTracker() {
           const statusClassName = statusInfo[hiker.status]?.className || '';
           return (
           <Card key={`hiker-card-${selectedGroup?.id || 'grp'}-${hiker.id}-${idx}`} className="bg-card border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-            <div className="p-4 flex items-center gap-4">
-              <Avatar className="size-12">
+            <div className="p-3 sm:p-4 flex items-center gap-3 sm:gap-4">
+              <Avatar className="size-10 sm:size-12 shrink-0">
                 <AvatarImage
                   src={hiker.avatar}
                   alt={hiker.name}
@@ -269,51 +270,51 @@ export default function LocationTracker() {
                 <AvatarFallback>{hiker.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold text-card-foreground truncate">{hiker.name}</p>
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <p className="font-semibold text-sm sm:text-base text-card-foreground truncate">{hiker.name}</p>
                   {hiker.isVerified !== false && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20" title={`Подпись Ed25519 проверена. Отпечаток: ${hiker.keyFingerprint || 'VERIFIED'}`}>
-                      <ShieldCheck className="size-3 text-emerald-500" />
+                    <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1 sm:px-1.5 py-0.5 rounded border border-emerald-500/20" title={`Подпись Ed25519 проверена. Отпечаток: ${hiker.keyFingerprint || 'VERIFIED'}`}>
+                      <ShieldCheck className="size-2.5 sm:size-3 text-emerald-500 shrink-0" />
                       <span>{hiker.keyFingerprint || 'Ed25519'}</span>
                     </span>
                   )}
                   {hiker.privacyMode === 'REDUCED' && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20" title="Огрубление координат до сетки 200x200м">
-                      <Eye className="size-3 text-amber-500" />
+                    <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1 sm:px-1.5 py-0.5 rounded border border-amber-500/20" title="Огрубление координат до сетки 200x200м">
+                      <Eye className="size-2.5 sm:size-3 text-amber-500 shrink-0" />
                       <span>Сетка 200м</span>
                     </span>
                   )}
                   {hiker.privacyMode === 'STEALTH' && (
-                    <span className="inline-flex items-center gap-0.5 text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/20" title="Скрытный режим: радиопередача отключена">
-                      <EyeOff className="size-3 text-purple-500" />
+                    <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1 sm:px-1.5 py-0.5 rounded border border-purple-500/20" title="Скрытный режим: радиопередача отключена">
+                      <EyeOff className="size-2.5 sm:size-3 text-purple-500 shrink-0" />
                       <span>Скрытный</span>
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                  <div className="flex items-center gap-1.5" title="Уровень заряда">
-                    <Battery className={cn("size-4", getBatteryIconColor(hiker.battery))} />
+                <div className="flex items-center gap-3 sm:gap-4 text-xs text-muted-foreground mt-1 flex-wrap">
+                  <div className="flex items-center gap-1 sm:gap-1.5" title="Уровень заряда">
+                    <Battery className={cn("size-3.5 sm:size-4", getBatteryIconColor(hiker.battery))} />
                     <span>{hiker.battery}%</span>
                   </div>
-                  <div className="flex items-center gap-1.5" title="Последнее обновление">
-                    <History className="size-4" />
+                  <div className="flex items-center gap-1 sm:gap-1.5" title="Последнее обновление">
+                    <History className="size-3.5 sm:size-4" />
                     <span>{hiker.lastUpdate}</span>
                   </div>
                 </div>
               </div>
-              <Badge variant="outline" className={cn("shrink-0", statusClassName)}>
-                <StatusIcon className="mr-1.5 size-3.5" />
-                {hiker.status}
+              <Badge variant="outline" className={cn("shrink-0 text-[11px] sm:text-xs py-0.5 px-2", statusClassName)}>
+                <StatusIcon className="mr-1 sm:mr-1.5 size-3 sm:size-3.5" />
+                <span>{hiker.status}</span>
               </Badge>
             </div>
             <Separator />
-            <div className="p-4 flex items-center justify-between gap-4 bg-muted/50">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="size-4 text-primary"/>
-                  <span className="font-mono text-xs">{hiker.coords}</span>
+            <div className="p-3 sm:p-4 flex items-center justify-between gap-2 sm:gap-4 bg-muted/50">
+              <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-muted-foreground min-w-0">
+                  <MapPin className="size-3.5 sm:size-4 text-primary shrink-0"/>
+                  <span className="font-mono truncate">{hiker.coords}</span>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => handleShowOnMap(hiker.coords)} className="text-muted-foreground hover:text-primary shrink-0">
-                  <ChevronRight className="size-5" />
+              <Button variant="ghost" size="icon" onClick={() => handleShowOnMap(hiker.coords)} className="text-muted-foreground hover:text-primary shrink-0 size-8 sm:size-9">
+                  <ChevronRight className="size-4 sm:size-5" />
                   <span className="sr-only">Показать на карте</span>
               </Button>
             </div>

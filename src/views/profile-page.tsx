@@ -244,14 +244,14 @@ export default function ProfilePage() {
 
         {/* Cryptographic Identity (Ed25519 & E2EE) Card */}
         <Card className="lg:col-span-2 border-primary/30 shadow-sm bg-card/60 backdrop-blur-sm">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+          <CardHeader className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <KeyRound className="size-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <KeyRound className="size-5 text-primary shrink-0" />
                   Криптографическая идентичность (Ed25519)
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-xs sm:text-sm mt-0.5">
                   Децентрализованная пара ключей для цифровой подписи и E2EE аутентификации
                 </CardDescription>
               </div>
@@ -260,7 +260,7 @@ export default function ProfilePage() {
                 size="sm"
                 onClick={handleRotateKey}
                 disabled={isRotatingKey}
-                className="text-xs flex items-center gap-1"
+                className="text-xs flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0"
               >
                 <RefreshCw className={`size-3.5 ${isRotatingKey ? 'animate-spin' : ''}`} />
                 Сменить ключ
