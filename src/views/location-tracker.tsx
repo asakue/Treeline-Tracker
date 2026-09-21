@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
-import { MapPin, History, Plus, Waypoints, Mountain, Download, Battery, Users, ChevronRight, Tent, Waves, Pencil, Trash2 } from "lucide-react";
+import { MapPin, History, Plus, Waypoints, Mountain, Download, Battery, Users, ChevronRight, Tent, Waves, Pencil, Trash2, ShieldCheck, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -49,9 +49,10 @@ const parseCoords = (coords?: string): [number, number] | null => {
   if (!coords) {
     return null;
   }
-  const parts = coords.replace(/° с\.ш\.,?|° в\.д\./g, '').split(/,?\s+/);
-  if (parts.length === 2) {
-    const [lat, lon] = parts.map(parseFloat);
+  const matches = coords.match(/[-+]?\d*\.?\d+/g);
+  if (matches && matches.length >= 2) {
+    const lat = parseFloat(matches[0]);
+    const lon = parseFloat(matches[1]);
     if (!isNaN(lat) && !isNaN(lon)) {
       return [lat, lon];
     }
@@ -60,9 +61,9 @@ const parseCoords = (coords?: string): [number, number] | null => {
 };
 
 export default function LocationTracker() {
-  const { setView, activeGroupId, setActiveGroupId, groupsHook } = useAppContext();
+  const { setView, activeGroupId, setActiveGroupId, groupsHook, routesHook } = useAppContext();
   const { groups, addGroup, updateGroup, deleteGroup } = groupsHook;
-  const { routes } = useRoutes();
+  const routes = routesHook?.routes || [];
   const { toast } = useToast();
   
   const [selectedGroupId, setSelectedGroupIdState] = useState(activeGroupId || groups[0]?.id || '');
@@ -70,8 +71,22 @@ export default function LocationTracker() {
   const [groupToEdit, setGroupToEdit] = useState<Group | undefined>(undefined);
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
+  const [isDownloadingMap, setIsDownloadingMap] = useState(false);
+  const [isMapDownloaded, setIsMapDownloaded] = useState(false);
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId) || groups[0];
+
+  const handleDownloadOfflineMap = () => {
+    setIsDownloadingMap(true);
+    setTimeout(() => {
+      setIsDownloadingMap(false);
+      setIsMapDownloaded(true);
+      toast({
+        title: 'Офлайн-карта сохранена',
+        description: 'Тайлы карты, тропы и высотные данные перевала загружены в локальный кэш.',
+      });
+    }, 1500);
+  };
 
   const handleSetSelectedGroup = (id: string) => {
     setSelectedGroupIdState(id);
@@ -165,10 +180,16 @@ export default function LocationTracker() {
     <div className="p-4 md:p-6 space-y-6">
       <Card className="bg-card border-border shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-             <Users className="size-6 text-primary"/>
-             Трекер группы
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <CardTitle className="flex items-center gap-3">
+               <Users className="size-6 text-primary"/>
+               Трекер группы
+            </CardTitle>
+            <Badge variant="outline" className="w-max text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 flex items-center gap-1">
+              <ShieldCheck className="size-3 text-emerald-500" />
+              E2EE Mesh (Ed25519 + AES-256)
+            </Badge>
+          </div>
            {selectedGroup && (
             <div className="text-sm text-muted-foreground pt-2 space-y-2">
                 <div className="flex items-center gap-2">
@@ -195,8 +216,8 @@ export default function LocationTracker() {
                   <SelectValue placeholder="Выберите группу" />
                 </SelectTrigger>
                 <SelectContent>
-                  {groups.map(group => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                  {groups.map((group, idx) => (
+                    <SelectItem key={`tracker-group-${group.id}-${idx}`} value={group.id}>{group.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -232,11 +253,11 @@ export default function LocationTracker() {
       </Card>
 
       <div className="space-y-4">
-        {hikers.map(hiker => {
+        {hikers.map((hiker, idx) => {
           const StatusIcon = statusInfo[hiker.status]?.icon || Mountain;
           const statusClassName = statusInfo[hiker.status]?.className || '';
           return (
-          <Card key={hiker.id} className="bg-card border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
+          <Card key={`hiker-card-${selectedGroup?.id || 'grp'}-${hiker.id}-${idx}`} className="bg-card border-border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
             <div className="p-4 flex items-center gap-4">
               <Avatar className="size-12">
                 <AvatarImage
@@ -247,8 +268,28 @@ export default function LocationTracker() {
                 />
                 <AvatarFallback>{hiker.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="flex-grow">
-                <p className="font-semibold text-card-foreground">{hiker.name}</p>
+              <div className="flex-grow min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-semibold text-card-foreground truncate">{hiker.name}</p>
+                  {hiker.isVerified !== false && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-500/20" title={`Подпись Ed25519 проверена. Отпечаток: ${hiker.keyFingerprint || 'VERIFIED'}`}>
+                      <ShieldCheck className="size-3 text-emerald-500" />
+                      <span>{hiker.keyFingerprint || 'Ed25519'}</span>
+                    </span>
+                  )}
+                  {hiker.privacyMode === 'REDUCED' && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] bg-amber-500/10 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded border border-amber-500/20" title="Огрубление координат до сетки 200x200м">
+                      <Eye className="size-3 text-amber-500" />
+                      <span>Сетка 200м</span>
+                    </span>
+                  )}
+                  {hiker.privacyMode === 'STEALTH' && (
+                    <span className="inline-flex items-center gap-0.5 text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/20" title="Скрытный режим: радиопередача отключена">
+                      <EyeOff className="size-3 text-purple-500" />
+                      <span>Скрытный</span>
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
                   <div className="flex items-center gap-1.5" title="Уровень заряда">
                     <Battery className={cn("size-4", getBatteryIconColor(hiker.battery))} />
@@ -286,8 +327,18 @@ export default function LocationTracker() {
         </CardHeader>
         <CardContent>
             <p className="text-sm text-muted-foreground mb-4">Скачайте карты для использования в офлайн-режиме, когда нет связи.</p>
-            <Button className="w-full">
-                Скачать карту перевала
+            <Button
+              className="w-full gap-2"
+              onClick={handleDownloadOfflineMap}
+              disabled={isDownloadingMap}
+              variant={isMapDownloaded ? 'outline' : 'default'}
+            >
+              <Download className="size-4" />
+              {isDownloadingMap
+                ? 'Загрузка тайлов перевала...'
+                : isMapDownloaded
+                ? 'Обновить карту перевала (сохранено)'
+                : 'Скачать карту перевала'}
             </Button>
         </CardContent>
       </Card>

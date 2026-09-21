@@ -17,16 +17,16 @@
 | **TASK-006** | Разработка модели угроз и матрицы безопасности | Critical | TASK-003 | Сформирован `docs/04-security/threat-model.md` | `DONE` | NFR-001..004 |
 | **TASK-007** | Исследование протокола MeshCore и BLE API | High | TASK-003 | Создан `docs/05-mesh/meshcore-research.md` | `DONE` | FR-012 |
 | **TASK-008** | Формирование дорожной карты и бэклога задач | High | TASK-001 | Созданы `roadmap.md`, `backlog.md` | `DONE` | NFR-013 |
-| **TASK-009** | Создание доменных интерфейсов LocationUpdate и Group | High | TASK-004 | Чистые TypeScript типы в `src/core/domain/` | `PLANNED` | FR-006, FR-007 |
-| **TASK-010** | Реализация интерфейса IGroupRepository и LocalStorage адаптера | High | TASK-009 | Изоляция групп за абстрактным интерфейсом | `PLANNED` | FR-002, FR-003 |
-| **TASK-011** | Реализация IRouteRepository для работы с маршрутами | Medium | TASK-009 | Вынос треков из монолитных компонентов | `PLANNED` | FR-004, FR-005 |
-| **TASK-012** | Устранение дубликатов файлов между `components` и `views` | High | TASK-009 | Единая консистентная структура каталогов | `PLANNED` | NFR-013 |
-| **TASK-013** | Генерация ключевых пар Ed25519 (Identity Service) | Critical | TASK-009 | Создание профиля с открытым и закрытым ключом | `PLANNED` | FR-001, NFR-004 |
-| **TASK-014** | Реализация шифрования полезной нагрузки AES-256-GCM | Critical | TASK-013 | Функция `encryptPayload(data, groupKey)` | `PLANNED` | FR-007, NFR-002 |
-| **TASK-015** | Реализация цифровой подписи пакета Ed25519 | Critical | TASK-013 | Функция `signPacket(data, privateKey)` | `PLANNED` | FR-008, NFR-002 |
-| **TASK-016** | Реализация дешифрования и валидации целостности AEAD | Critical | TASK-014 | Функция `decryptPayload(packet, groupKey)` | `PLANNED` | FR-007, NFR-003 |
-| **TASK-017** | Реализация защиты от повторов (Sequence & Freshness Window) | Critical | TASK-016 | Отклонение старых пакетов с `timestamp` > 10m | `PLANNED` | FR-009, NFR-003 |
-| **TASK-018** | Реализация режимов приватности (Normal, Reduced, Stealth) | High | TASK-014 | Огрубление координат при `REDUCED_PRIVACY` | `PLANNED` | FR-022, NFR-005 |
+| **TASK-009** | Создание доменных интерфейсов LocationUpdate и Group | High | TASK-004 | Чистые TypeScript типы в `src/core/domain/` | `DONE` | FR-006, FR-007 |
+| **TASK-010** | Реализация интерфейса IGroupRepository и LocalStorage адаптера | High | TASK-009 | Изоляция групп за абстрактным интерфейсом | `DONE` | FR-002, FR-003 |
+| **TASK-011** | Реализация IRouteRepository для работы с маршрутами | Medium | TASK-009 | Вынос треков из монолитных компонентов | `DONE` | FR-004, FR-005 |
+| **TASK-012** | Устранение дубликатов файлов между `components` и `views` | High | TASK-009 | Единая консистентная структура каталогов | `DONE` | NFR-013 |
+| **TASK-013** | Генерация ключевых пар Ed25519 (Identity Service) | Critical | TASK-009 | Создание профиля с открытым и закрытым ключом | `DONE` | FR-001, NFR-004 |
+| **TASK-014** | Реализация шифрования полезной нагрузки AES-256-GCM | Critical | TASK-013 | Функция `encryptPayload(data, groupKey)` | `DONE` | FR-007, NFR-002 |
+| **TASK-015** | Реализация цифровой подписи пакета Ed25519 | Critical | TASK-013 | Функция `signPacket(data, privateKey)` | `DONE` | FR-008, NFR-002 |
+| **TASK-016** | Реализация дешифрования и валидации целостности AEAD | Critical | TASK-014 | Функция `decryptPayload(packet, groupKey)` | `DONE` | FR-007, NFR-003 |
+| **TASK-017** | Реализация защиты от повторов (Sequence & Freshness Window) | Critical | TASK-016 | Отклонение старых пакетов с `timestamp` > 10m | `DONE` | FR-009, NFR-003 |
+| **TASK-018** | Реализация режимов приватности (Normal, Reduced, Stealth) | High | TASK-014 | Огрубление координат при `REDUCED_PRIVACY` | `DONE` | FR-022, NFR-005 |
 | **TASK-019** | Создание интерфейса ITransport и базовых типов результата | High | TASK-009 | Контракт `sendLocation`, `sendEmergency` | `PLANNED` | FR-010 |
 | **TASK-020** | Реализация InternetTransport (Fetch/WSS адаптер) | High | TASK-019 | Отправка пакета при наличии сотовой сети | `PLANNED` | FR-011 |
 | **TASK-021** | Реализация программного симулятора MockMeshCoreTransport | High | TASK-019 | Виртуальная топология узлов и задержки | `PLANNED` | FR-012, NFR-014 |

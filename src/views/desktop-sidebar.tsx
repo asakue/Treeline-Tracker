@@ -112,7 +112,7 @@ const DesktopSidebar = memo(() => {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          <SidebarSeparator className="my-2" />
+          <SidebarSeparator key="sidebar-menu-separator" className="my-2" />
           {secondaryMenuItems.map(
             ({ id, icon: Icon, label, tooltip }) => (
               <SidebarMenuItem key={id}>
@@ -125,7 +125,7 @@ const DesktopSidebar = memo(() => {
                       'bg-accent/20 text-accent hover:bg-accent/30 hover:text-accent-foreground',
                     id === 'search' && 'data-[active=true]:bg-accent/20 data-[active=true]:text-accent',
                     id === 'emergency' &&
-                      'bg-destructive/20 text-destructive-foreground hover-bg-destructive/30 hover:text-destructive-foreground data-[active=true]:bg-destructive data-[active=true]:text-destructive-foreground data-[active=true]:hover:bg-destructive/90'
+                      'bg-destructive/20 text-destructive-foreground hover:bg-destructive/30 hover:text-destructive-foreground data-[active=true]:bg-destructive data-[active=true]:text-destructive-foreground data-[active=true]:hover:bg-destructive/90'
                   )}
                 >
                   <Icon />

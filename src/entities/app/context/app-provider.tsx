@@ -3,6 +3,7 @@
 import { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { useGroups } from '@/entities/group';
 import { useHikerDataSimulation } from '@/entities/hiker';
+import { useRoutes } from '@/entities/route';
 
 export type View =
   | 'map'
@@ -34,6 +35,7 @@ type AppContextType = {
   addMapOverlay: (overlay: MapOverlay) => void;
   removeMapOverlay: (id: string) => void;
   groupsHook: ReturnType<typeof useGroups>;
+  routesHook: ReturnType<typeof useRoutes>;
   drawingRoutePoints: [number, number][];
   setDrawingRoutePoints: React.Dispatch<React.SetStateAction<[number, number][]>>;
   addDrawingRoutePoint: (point: [number, number]) => void;
@@ -49,6 +51,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   
   const simulatedHikers = useHikerDataSimulation();
   const groupsHook = useGroups();
+  const routesHook = useRoutes();
   const { updateGroupsWithSimulatedData } = groupsHook;
 
   useEffect(() => {
@@ -105,6 +108,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addMapOverlay,
     removeMapOverlay,
     groupsHook,
+    routesHook,
     drawingRoutePoints,
     setDrawingRoutePoints,
     addDrawingRoutePoint,

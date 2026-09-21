@@ -1,7 +1,7 @@
 import L from 'leaflet';
 import { savedRoutes } from '@/lib/routes-data';
 import { groups, type Hiker, type Group } from '@/lib/groups-data';
-import type { View } from '@/components/app-provider';
+import type { View } from '@/entities/app';
 
 // Default Leaflet icon setup
 export const DefaultIcon = L.icon({
@@ -85,17 +85,19 @@ export const createHikerPopupContent = (
 
 
 // Helper to create the 'remove overlay' button control
-export const createRemoveOverlayControl = (id: string, removeMapOverlay: (id: string) => void) => {
+export const createRemoveOverlayControl = (id: string, removeMapOverlay: (id: string) => void): L.Control => {
   const CustomControl = L.Control.extend({
-    onAdd: function(map: L.Map) {
+    onAdd: function() {
       const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       container.style.backgroundColor = 'white';
-      container.style.width = '30px';
-      container.style.height = '30px';
+      container.style.width = '32px';
+      container.style.height = '32px';
       container.style.display = 'flex';
       container.style.alignItems = 'center';
       container.style.justifyContent = 'center';
-      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+      container.style.cursor = 'pointer';
+      container.title = 'Удалить зону поиска';
+      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
       
       L.DomEvent.on(container, 'click', (e) => {
         L.DomEvent.stop(e);
@@ -104,7 +106,7 @@ export const createRemoveOverlayControl = (id: string, removeMapOverlay: (id: st
       
       return container;
     },
-    onRemove: function(map: L.Map) {}
+    onRemove: function() {}
   });
-  return new CustomControl({ position: 'topright' });
+  return new CustomControl({ position: 'topleft' }) as unknown as L.Control;
 };

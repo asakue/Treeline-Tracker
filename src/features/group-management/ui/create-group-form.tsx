@@ -112,8 +112,10 @@ export default function CreateGroupForm({
   }, [groupToEdit, form, open]);
 
 
+  const activeRoutes = availableRoutes.filter((r) => !r.isArchived);
+
   const handleRouteChange = (routeId: string) => {
-    const selectedRoute = availableRoutes.find(r => r.id === routeId);
+    const selectedRoute = activeRoutes.find(r => r.id === routeId);
     if (selectedRoute) {
       form.setValue('location', selectedRoute.location);
       form.setValue('distance', selectedRoute.distance);
@@ -173,8 +175,8 @@ export default function CreateGroupForm({
                       </FormControl>
                       <SelectContent>
                         <ScrollArea className="h-48">
-                          {availableRoutes.map(route => (
-                              <SelectItem key={route.id} value={route.id}>{route.name}</SelectItem>
+                          {activeRoutes.map((route, idx) => (
+                              <SelectItem key={`form-route-${route.id}-${idx}`} value={route.id}>{route.name}</SelectItem>
                           ))}
                         </ScrollArea>
                       </SelectContent>
@@ -268,10 +270,10 @@ export default function CreateGroupForm({
                         <CommandEmpty>Участник не найден.</CommandEmpty>
                         <CommandGroup>
                           <CommandList>
-                            {availableHikers.map((hiker) => (
+                            {availableHikers.map((hiker, idx) => (
                               <CommandItem
                                 value={hiker.name}
-                                key={hiker.id}
+                                key={`form-hiker-${hiker.id}-${idx}`}
                                 onSelect={() => {
                                   const selectedIds = field.value || [];
                                   const newIds = selectedIds.includes(hiker.id)
@@ -310,8 +312,8 @@ export default function CreateGroupForm({
                   <div className="flex flex-wrap gap-2">
                       {availableHikers
                         .filter(h => form.watch('hikerIds').includes(h.id))
-                        .map(hiker => (
-                          <Badge key={hiker.id} variant="secondary" className="flex items-center gap-2">
+                        .map((hiker, idx) => (
+                          <Badge key={`form-selected-badge-${hiker.id}-${idx}`} variant="secondary" className="flex items-center gap-2">
                              <Avatar className="mr-1 size-4">
                                 <AvatarImage src={hiker.avatar} alt={hiker.name} />
                                 <AvatarFallback>{hiker.name[0]}</AvatarFallback>

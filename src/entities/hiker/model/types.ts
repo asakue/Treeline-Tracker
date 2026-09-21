@@ -7,4 +7,7 @@ export type Hiker = {
   coords: string;
   lastUpdate: string;
   lastUpdateTimestamp?: number; // Add this to store the raw timestamp
+  privacyMode?: 'NORMAL' | 'REDUCED' | 'STEALTH';
+  isVerified?: boolean;
+  keyFingerprint?: string;
 };

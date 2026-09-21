@@ -101,11 +101,15 @@ export default function EmergencyServices() {
         audioContextRef.current = context;
 
         const oscillator = context.createOscillator();
+        const gainNode = context.createGain();
         oscillatorRef.current = oscillator;
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1000, context.currentTime);
-        oscillator.connect(context.destination);
+        oscillator.frequency.setValueAtTime(880, context.currentTime);
+        gainNode.gain.setValueAtTime(0.3, context.currentTime);
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(context.destination);
         oscillator.start();
 
         setIsAlarming(true);
@@ -132,15 +136,21 @@ export default function EmergencyServices() {
     };
   }, [isBlinking]);
 
-
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
-      if (oscillatorRef.current) {
-        oscillatorRef.current.stop();
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
+      try {
+        if (oscillatorRef.current) {
+          oscillatorRef.current.stop();
+          oscillatorRef.current.disconnect();
+          oscillatorRef.current = null;
+        }
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
+        }
+      } catch (e) {
+        // silent cleanup error
       }
       document.body.classList.remove('sos-blink-animation');
     };

@@ -22,15 +22,17 @@ import { Button } from '@/shared/ui/button';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 
 const techStack = [
-  { name: 'Next.js', description: 'React-фреймворк для production.' },
-  { name: 'React', description: 'Библиотека для создания пользовательских интерфейсов.' },
-  { name: 'TypeScript', description: 'Строгая типизация для JavaScript.' },
+  { name: 'Next.js 15', description: 'React-фреймворк для production с App Router.' },
+  { name: 'React 18', description: 'Библиотека для создания пользовательских интерфейсов.' },
+  { name: 'TypeScript', description: 'Строгая типизация для всего кодовой базы.' },
+  { name: 'Leaflet / OSM', description: 'Интерактивные карты OpenStreetMap.' },
+  { name: 'OpenTopoMap & CyclOSM', description: 'Стили карт с рельефом, изолиниями и горными тропами.' },
+  { name: 'Open-Elevation DEM', description: 'Цифровая модель рельефа SRTM для расчета набора/сброса высот.' },
+  { name: 'BRouter Hiking Engine', description: 'Пешеходная маршрутизация по тропам с учетом уклонов и препятствий.' },
   { name: 'Tailwind CSS', description: 'Утилитарный CSS-фреймворк.' },
-  { name: 'Genkit', description: 'Платформа для разработки AI-приложений.' },
   { name: 'shadcn/ui', description: 'Коллекция повторно используемых компонентов.' },
-  { name: 'Leaflet', description: 'Библиотека для интерактивных карт.' },
-  { name: 'Recharts', description: 'Библиотека для создания диаграмм.' },
-  { name: 'Firebase', description: 'Платформа для веб- и мобильных приложений.' },
+  { name: 'Recharts', description: 'Интерактивные диаграммы и высотные профили.' },
+  { name: 'Firebase', description: 'Платформа для хранения данных и аутентификации.' },
 ];
 
 const scripts = [
@@ -105,11 +107,12 @@ export default function AboutApp() {
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap font-mono">
                   {updatesLog.trim().split('\n').map((line, index) => {
+                      const lineKey = `upd-log-${index}`;
                       if (line.startsWith('## ')) {
-                        return <h2 key={index} className="text-xl font-bold mt-4 mb-2 text-foreground">{line.substring(3)}</h2>;
+                        return <h2 key={lineKey} className="text-xl font-bold mt-4 mb-2 text-foreground">{line.substring(3)}</h2>;
                       }
                       if (line.startsWith('### ')) {
-                        return <h3 key={index} className="text-lg font-semibold mt-3 mb-1 text-primary">{line.substring(4)}</h3>;
+                        return <h3 key={lineKey} className="text-lg font-semibold mt-3 mb-1 text-primary">{line.substring(4)}</h3>;
                       }
                       if (line.startsWith('- **')) {
                         const boldEnd = line.indexOf('**', 4);
@@ -117,7 +120,7 @@ export default function AboutApp() {
                           const boldText = line.substring(4, boldEnd);
                           const restText = line.substring(boldEnd + 2);
                           return (
-                            <p key={index} className="my-1.5 pl-2 border-l-2 border-primary/40">
+                            <p key={lineKey} className="my-1.5 pl-2 border-l-2 border-primary/40">
                               <strong className="text-foreground">{boldText}</strong>
                               {restText}
                             </p>
@@ -125,12 +128,12 @@ export default function AboutApp() {
                         }
                       }
                       if (line.startsWith('- ')) {
-                        return <p key={index} className="my-1.5 pl-2 border-l-2 border-muted">{line.substring(2)}</p>;
+                        return <p key={lineKey} className="my-1.5 pl-2 border-l-2 border-muted">{line.substring(2)}</p>;
                       }
                       if (!line.trim()) {
-                        return <div key={index} className="h-2" />;
+                        return <div key={lineKey} className="h-2" />;
                       }
-                      return <p key={index} className="my-1 text-muted-foreground">{line}</p>;
+                      return <p key={lineKey} className="my-1 text-muted-foreground">{line}</p>;
                     })}
                 </div>
               )}
@@ -175,9 +178,9 @@ export default function AboutApp() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {techStack.map((tech) => (
+              {techStack.map((tech, idx) => (
                 <div
-                  key={tech.name}
+                  key={`tech-item-${idx}-${tech.name}`}
                   className="p-4 bg-muted/50 rounded-lg"
                 >
                   <p className="font-semibold text-foreground">{tech.name}</p>
@@ -222,8 +225,8 @@ export default function AboutApp() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {scripts.map((script) => (
-              <div key={script.command} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-muted/50 rounded-lg">
+            {scripts.map((script, idx) => (
+              <div key={`script-item-${idx}-${script.command}`} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 bg-muted/50 rounded-lg">
                 <Badge variant="outline" className="font-mono text-sm max-w-max mb-2 sm:mb-0">
                   {script.command}
                 </Badge>
@@ -245,13 +248,7 @@ export default function AboutApp() {
                     Клонируйте репозиторий, установите зависимости и запустите сервер для разработки.
                   </p>
                   <pre className="p-3 bg-black/20 rounded-md text-sm text-white/80 whitespace-pre-wrap font-mono">
-                    <code>
-                      git clone [URL репозитория]
-                      <br />
-                      npm install
-                      <br />
-                      npm run dev
-                    </code>
+                    <code>{`git clone https://github.com/asakue/Treeline-Tracker.git\nnpm install\nnpm run dev`}</code>
                   </pre>
             </CardContent>
         </Card>

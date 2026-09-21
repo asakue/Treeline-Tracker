@@ -63,16 +63,30 @@ export const createHikerPopupContent = (
   group: Group,
   setView: (view: View, props?: any) => void
 ) => {
-  const container = L.DomUtil.create('div', 'space-y-1');
-  const title = L.DomUtil.create('div', 'font-bold text-base', container);
+  const container = L.DomUtil.create('div', 'space-y-1.5 min-w-[180px]');
+  
+  const headerDiv = L.DomUtil.create('div', 'flex items-center justify-between gap-2 border-b pb-1', container);
+  const title = L.DomUtil.create('div', 'font-bold text-base text-gray-900', headerDiv);
   title.innerText = hiker.name;
   
-  L.DomUtil.create('div', 'text-sm', container).innerText = `Статус: ${hiker.status}`;
-  L.DomUtil.create('div', 'text-sm', container).innerText = `Батарея: ${hiker.battery}%`;
-  L.DomUtil.create('div', 'text-xs text-gray-500', container).innerText = `Обновлено: ${hiker.lastUpdate}`;
+  const badge = L.DomUtil.create('span', 'text-[10px] font-mono bg-green-100 text-green-800 px-1.5 py-0.5 rounded font-semibold', headerDiv);
+  badge.innerText = `🔒 ${hiker.keyFingerprint || 'Ed25519'}`;
+  badge.title = 'Цифровая подпись Ed25519 проверена';
+
+  L.DomUtil.create('div', 'text-xs text-gray-700', container).innerText = `Статус: ${hiker.status}`;
   
-  const btn = L.DomUtil.create('button', 'text-blue-600 hover:underline cursor-pointer mt-2 text-left', container);
-  btn.innerText = 'Перейти в чат группы';
+  const privacyText = hiker.privacyMode === 'REDUCED' 
+    ? 'Сетка 200м (Reduced)' 
+    : hiker.privacyMode === 'STEALTH' 
+    ? 'Вне эфира (Stealth)' 
+    : 'Точные GNSS (~5м)';
+  L.DomUtil.create('div', 'text-xs text-gray-700', container).innerText = `Приватность: ${privacyText}`;
+
+  L.DomUtil.create('div', 'text-xs text-gray-700', container).innerText = `Батарея: ${hiker.battery}%`;
+  L.DomUtil.create('div', 'text-[11px] text-gray-500', container).innerText = `Обновлено: ${hiker.lastUpdate}`;
+  
+  const btn = L.DomUtil.create('button', 'text-blue-600 hover:underline cursor-pointer mt-1 text-xs font-medium block text-left', container);
+  btn.innerText = '💬 Перейти в чат группы';
   L.DomEvent.on(btn, 'click', () => {
     setView('chat', { groupId: group.id });
   });
@@ -82,17 +96,19 @@ export const createHikerPopupContent = (
 
 
 // Helper to create the 'remove overlay' button control
-export const createRemoveOverlayControl = (id: string, removeMapOverlay: (id: string) => void) => {
+export const createRemoveOverlayControl = (id: string, removeMapOverlay: (id: string) => void): L.Control => {
   const CustomControl = L.Control.extend({
-    onAdd: function(map: L.Map) {
+    onAdd: function() {
       const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
       container.style.backgroundColor = 'white';
-      container.style.width = '30px';
-      container.style.height = '30px';
+      container.style.width = '32px';
+      container.style.height = '32px';
       container.style.display = 'flex';
       container.style.alignItems = 'center';
       container.style.justifyContent = 'center';
-      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
+      container.style.cursor = 'pointer';
+      container.title = 'Удалить зону поиска';
+      container.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`;
       
       L.DomEvent.on(container, 'click', (e) => {
         L.DomEvent.stop(e);
@@ -101,7 +117,7 @@ export const createRemoveOverlayControl = (id: string, removeMapOverlay: (id: st
       
       return container;
     },
-    onRemove: function(map: L.Map) {}
+    onRemove: function() {}
   });
-  return new CustomControl({ position: 'topright' });
+  return new CustomControl({ position: 'topleft' }) as unknown as L.Control;
 };

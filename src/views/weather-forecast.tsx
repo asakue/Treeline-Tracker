@@ -126,8 +126,8 @@ export default function WeatherForecast() {
           <div className="relative">
             <ScrollArea>
               <div className="flex space-x-4 pb-4">
-                {hourlyForecast.map(({ time, Icon, temp }, index) => (
-                  <div key={index} className="flex flex-col items-center justify-center gap-2 p-3 rounded-lg bg-muted/50 min-w-[6rem]">
+                {hourlyForecast.map(({ time, Icon, temp }) => (
+                  <div key={`hourly-${time}`} className="flex flex-col items-center justify-center gap-2 p-3 rounded-lg bg-muted/50 min-w-[6rem]">
                     <p className="text-sm text-muted-foreground">{time}</p>
                     <Icon className="size-6 text-accent" />
                     <p className="font-bold">{temp}°</p>

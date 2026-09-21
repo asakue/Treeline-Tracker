@@ -9,7 +9,18 @@ import MobileBottomNav from '@/views/mobile-bottom-nav';
 import { useAppContext } from '@/entities/app';
 import ViewLoader from '@/shared/ui/view-loader';
 
+// Direct imports for reliable bundling without missing chunk errors
+import LocationTracker from '@/views/location-tracker';
+import GroupChat from '@/views/group-chat';
+import WeatherForecast from '@/views/weather-forecast';
+import RoutePlanner from '@/views/route-planner';
+import LostHikerTool from '@/features/hiker-search/ui/lost-hiker-tool';
+import EmergencyServices from '@/views/emergency-services';
+import ProfilePage from '@/views/profile-page';
+import AboutUs from '@/views/about-us';
+import AboutApp from '@/views/about-app';
 
+// Leaflet map components require dynamic import with ssr: false due to browser-only window/DOM APIs
 const MapView = dynamic(() => import('@/views/map-view'), {
   ssr: false,
   loading: () => <ViewLoader />,
@@ -19,16 +30,6 @@ const MapRouteDrawer = dynamic(() => import('@/features/route-drawing/ui/map-rou
   ssr: false,
   loading: () => <ViewLoader />,
 });
-
-const LocationTracker = dynamic(() => import('@/views/location-tracker'), { ssr: false, loading: () => <ViewLoader /> });
-const GroupChat = dynamic(() => import('@/views/group-chat'), { ssr: false, loading: () => <ViewLoader /> });
-const WeatherForecast = dynamic(() => import('@/views/weather-forecast'), { loading: () => <ViewLoader /> });
-const RoutePlanner = dynamic(() => import('@/views/route-planner'), { loading: () => <ViewLoader /> });
-const LostHikerTool = dynamic(() => import('@/features/hiker-search/ui/lost-hiker-tool'), { loading: () => <ViewLoader /> });
-const EmergencyServices = dynamic(() => import('@/views/emergency-services'), { loading: () => <ViewLoader /> });
-const ProfilePage = dynamic(() => import('@/views/profile-page'), { loading: () => <ViewLoader /> });
-const AboutUs = dynamic(() => import('@/views/about-us'), { loading: () => <ViewLoader /> });
-const AboutApp = dynamic(() => import('@/views/about-app'), { loading: () => <ViewLoader /> });
 
 
 export default function AppLayout() {

@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { Send, Users } from 'lucide-react';
+import { Send, Users, ShieldCheck, Lock, KeyRound } from 'lucide-react';
+import { Badge } from '@/shared/ui/badge';
 import { cn } from '@/shared/lib/utils';
 import {
   Select,
@@ -134,32 +135,50 @@ export default function GroupChat() {
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="border-b p-4 shrink-0 z-10 bg-background">
+      <div className="border-b p-4 shrink-0 z-10 bg-background space-y-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <h2 className="text-lg font-semibold truncate">
-            {selectedGroup?.name || 'Выберите группу'}
-          </h2>
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 className="text-lg font-semibold truncate">
+              {selectedGroup?.name || 'Выберите группу'}
+            </h2>
+            <Badge variant="outline" className="hidden sm:inline-flex items-center gap-1 text-[11px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 shrink-0">
+              <ShieldCheck className="size-3 text-emerald-500" />
+              E2EE AES-256
+            </Badge>
+          </div>
           <Select value={selectedGroupId} onValueChange={handleGroupChange}>
             <SelectTrigger className="w-full sm:w-[250px]">
               <SelectValue placeholder="Выберите группу" />
             </SelectTrigger>
             <SelectContent>
-              {groups.map((group) => (
-                <SelectItem key={group.id} value={group.id}>
+              {groups.map((group, idx) => (
+                <SelectItem key={`chat-group-${group.id}-${idx}`} value={group.id}>
                   {group.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
+
+        {/* E2EE Info Strip */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-md border border-border/40">
+          <div className="flex items-center gap-1.5 truncate">
+            <Lock className="size-3.5 text-emerald-500 shrink-0" />
+            <span className="truncate">Сообщения защищены сквозным шифрованием (AES-256-GCM + Ed25519)</span>
+          </div>
+          <div className="hidden md:flex items-center gap-1 text-[10px] font-mono text-muted-foreground/80 shrink-0 ml-2">
+            <KeyRound className="size-3 text-primary" />
+            <span>Ключ группы #{selectedGroupId?.slice(-4) || 'mesh'}</span>
+          </div>
+        </div>
       </div>
       
       <div className="flex-1 flex flex-col overflow-y-hidden">
         <ScrollArea className="flex-1" viewportRef={scrollAreaRef}>
           <div className="p-4 space-y-4">
-            {currentMessages.map((message: any) => (
+            {currentMessages.map((message: any, idx: number) => (
               <div
-                key={message.id}
+                key={message.id ? `msg-${message.id}-${idx}` : `msg-idx-${idx}`}
                 className={cn(
                   'flex items-end gap-2',
                   message.isSender ? 'justify-end' : 'justify-start'

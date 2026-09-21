@@ -20,6 +20,9 @@ export const availableHikers: Hiker[] = [
     battery: 82,
     coords: '43.3550° с.ш., 42.4392° в.д.',
     lastUpdate: '2 минуты назад',
+    privacyMode: 'NORMAL',
+    isVerified: true,
+    keyFingerprint: '7E4F:92B1',
   },
   {
     id: 'hiker2',
@@ -29,6 +32,9 @@ export const availableHikers: Hiker[] = [
     battery: 91,
     coords: '43.3540° с.ш., 42.4382° в.д.',
     lastUpdate: 'только что',
+    privacyMode: 'NORMAL',
+    isVerified: true,
+    keyFingerprint: '3C8A:55D0',
   },
   {
     id: 'user',
@@ -38,6 +44,9 @@ export const availableHikers: Hiker[] = [
     battery: 95,
     coords: '43.3530° с.ш., 42.4372° в.д.',
     lastUpdate: '1 минуту назад',
+    privacyMode: 'NORMAL',
+    isVerified: true,
+    keyFingerprint: 'A1B2:C3D4',
   },
   {
     id: 'hiker3',
@@ -47,6 +56,9 @@ export const availableHikers: Hiker[] = [
     battery: 65,
     coords: '44.0725° с.ш., 40.0036° в.д.',
     lastUpdate: '15 минут назад',
+    privacyMode: 'REDUCED',
+    isVerified: true,
+    keyFingerprint: '99F2:1A4E',
   },
   {
     id: 'hiker5',
@@ -56,6 +68,9 @@ export const availableHikers: Hiker[] = [
     battery: 78,
     coords: '44.0715° с.ш., 40.0026° в.д.',
     lastUpdate: '20 минут назад',
+    privacyMode: 'NORMAL',
+    isVerified: true,
+    keyFingerprint: '6D2B:880C',
   },
   {
     id: 'hiker6',
@@ -65,6 +80,9 @@ export const availableHikers: Hiker[] = [
     battery: 88,
     coords: '44.2951° с.ш., 40.1685° в.д.',
     lastUpdate: '5 минут назад',
+    privacyMode: 'NORMAL',
+    isVerified: true,
+    keyFingerprint: '11B8:FE40',
   },
   {
     id: 'hiker7',
@@ -74,6 +92,9 @@ export const availableHikers: Hiker[] = [
     battery: 92,
     coords: '44.2941° с.ш., 40.1675° в.д.',
     lastUpdate: '5 минут назад',
+    privacyMode: 'STEALTH',
+    isVerified: true,
+    keyFingerprint: '44C9:72AA',
   },
 ];
 

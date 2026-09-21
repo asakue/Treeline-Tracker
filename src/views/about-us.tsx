@@ -5,16 +5,19 @@ import { Zap, Target, Smile, Mountain, Activity, HardHat, Building, ChevronDown,
 
 const principles = [
     {
+        id: "principle-automation",
         icon: <Zap className="size-8 text-primary" />,
         title: "Принцип Автоматики",
         description: "Система работает сама. Задайте безопасный радиус, и если кто-то его покинет — у него и у руководителя группы раздастся сигнал. Система бдит, пока вы наслаждаетесь походом.",
     },
     {
+        id: "principle-accuracy",
         icon: <Target className="size-8 text-primary" />,
         title: "Принцип Точности",
         description: "В случае ЧС достаточно одного нажатия на кнопку SOS. Точные GPS-координаты пострадавшего мгновенно отправляются на карты всех участников группы.",
     },
     {
+        id: "principle-calmness",
         icon: <Smile className="size-8 text-primary" />,
         title: "Принцип Спокойствия",
         description: "Новички перестают панически бояться отстать и могут наслаждаться природой. Гиды получают цифрового помощника, который многократно повышает безопасность группы.",
@@ -22,10 +25,10 @@ const principles = [
 ]
 
 const perspectives = [
-    { icon: Mountain, title: "Горнолыжные курорты", description: "Контроль групп фрирайдеров в лавиноопасных зонах." },
-    { icon: Activity, title: "Поисковые отряды", description: "Передача SOS-сигнала напрямую в диспетчерскую службу спасателей." },
-    { icon: HardHat, title: "Промышленность", description: "Мониторинг персонала на удалённых стройках, карьерах и вышках." },
-    { icon: Building, title: "Сельское хозяйство", description: "Учёт и координация работы на огромных территориях." },
+    { id: "perspective-resorts", icon: Mountain, title: "Горнолыжные курорты", description: "Контроль групп фрирайдеров в лавиноопасных зонах." },
+    { id: "perspective-rescue", icon: Activity, title: "Поисковые отряды", description: "Передача SOS-сигнала напрямую в диспетчерскую службу спасателей." },
+    { id: "perspective-industry", icon: HardHat, title: "Промышленность", description: "Мониторинг персонала на удалённых стройках, карьерах и вышках." },
+    { id: "perspective-agriculture", icon: Building, title: "Сельское хозяйство", description: "Учёт и координация работы на огромных территориях." },
 ];
 
 export default function AboutUs() {
@@ -76,8 +79,8 @@ export default function AboutUs() {
                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-12">Как мы решаем эту проблему</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {principles.map((feature, index) => (
-                     <Card key={index} className="text-center bg-card border-border/50 shadow-md hover:-translate-y-2 transition-transform duration-300">
+                {principles.map((feature) => (
+                     <Card key={feature.id} className="text-center bg-card border-border/50 shadow-md hover:-translate-y-2 transition-transform duration-300">
                         <CardHeader className="items-center">
                             <div className="p-4 bg-primary/10 rounded-full">
                                 {feature.icon}
@@ -102,8 +105,8 @@ export default function AboutUs() {
                         Наша технология не ограничивается лесом. Мы создаём платформу для безопасности в любой среде, где нет стабильной связи, но есть люди, за которых кто-то отвечает.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-                        {perspectives.map((p, i) => (
-                            <div key={i} className="flex flex-col items-center gap-3 p-4 rounded-xl bg-background transition-all duration-300 hover:bg-muted/80 hover:shadow-lg">
+                        {perspectives.map((p) => (
+                            <div key={p.id} className="flex flex-col items-center gap-3 p-4 rounded-xl bg-background transition-all duration-300 hover:bg-muted/80 hover:shadow-lg">
                                 <div className="bg-primary/10 p-4 rounded-full">
                                     <p.icon className="size-8 text-primary" />
                                 </div>

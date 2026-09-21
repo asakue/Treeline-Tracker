@@ -63,7 +63,7 @@ const MobileBottomNav = memo(() => {
             <span className="text-xs mt-1">{tooltip}</span>
           </Button>
         ))}
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <Sheet key="mobile-nav-more-sheet" open={isMenuOpen} onOpenChange={setIsMenuOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
