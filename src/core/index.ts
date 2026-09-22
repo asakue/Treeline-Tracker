@@ -5,4 +5,5 @@
 export * from './domain';
 export * from './repositories';
 export * from './security';
+export * from './utils/gpx-exporter';
 

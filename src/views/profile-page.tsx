@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Avatar,
   AvatarFallback,
@@ -35,48 +35,26 @@ import {
   Eye,
   EyeOff,
   Navigation,
+  Download,
+  FileCode,
+  CheckCircle2,
+  Check,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 import { Separator } from '@/shared/ui/separator';
 import { Label } from '@/shared/ui/label';
 import { Switch } from '@/shared/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/shared/ui/radio-group';
+import { Progress } from '@/shared/ui/progress';
 import { useTheme } from 'next-themes';
 import {
   getOrCreateLocalIdentity,
   rotateLocalIdentity,
 } from '@/core/security/identity-manager';
-import { UserIdentity, PrivacyMode } from '@/core/domain/types';
-
-interface StatItem {
-  id: string;
-  label: string;
-  value: string;
-  icon: typeof TrendingUp;
-  iconColor: string;
-  iconBg: string;
-  hoverBorder: string;
-}
-
-const statisticsData: StatItem[] = [
-  {
-    id: 'stat-routes-completed',
-    label: 'Пройдено маршрутов',
-    value: '12',
-    icon: TrendingUp,
-    iconColor: 'text-primary',
-    iconBg: 'bg-primary/10',
-    hoverBorder: 'hover:border-primary/50',
-  },
-  {
-    id: 'stat-total-distance',
-    label: 'Общее расстояние',
-    value: '158 км',
-    icon: MapPin,
-    iconColor: 'text-accent',
-    iconBg: 'bg-accent/10',
-    hoverBorder: 'hover:border-accent/50',
-  },
-];
+import { UserIdentity, PrivacyMode, Route } from '@/core/domain/types';
+import { routeRepository } from '@/core/repositories';
+import { exportRoutesAsGpx } from '@/core/utils/gpx-exporter';
 
 interface NotificationSetting {
   id: string;
@@ -129,13 +107,26 @@ const themeOptions: ThemeOption[] = [
 export default function ProfilePage() {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   const [identity, setIdentity] = useState<UserIdentity | null>(null);
   const [privacyMode, setPrivacyMode] = useState<PrivacyMode>('NORMAL');
   const [isRotatingKey, setIsRotatingKey] = useState(false);
+  const [routes, setRoutes] = useState<Route[]>([]);
+  const [isExportingGpx, setIsExportingGpx] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>('https://picsum.photos/seed/user/100/100');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Загрузка сохраненного аватара
+    if (typeof window !== 'undefined') {
+      const savedAvatar = localStorage.getItem('treeline_user_avatar');
+      if (savedAvatar) {
+        setAvatarUrl(savedAvatar);
+      }
+    }
+
     // Инициализация криптографической идентичности
     getOrCreateLocalIdentity('Даниил').then((id) => {
       setIdentity(id);
@@ -146,7 +137,115 @@ export default function ProfilePage() {
     if (savedPrivacy && ['NORMAL', 'REDUCED', 'STEALTH'].includes(savedPrivacy)) {
       setPrivacyMode(savedPrivacy);
     }
+
+    // Загрузка сохраненных и исторических маршрутов
+    routeRepository.getRoutes(true).then((loadedRoutes) => {
+      setRoutes(loadedRoutes);
+    });
   }, []);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Неверный формат',
+        description: 'Пожалуйста, выберите файл изображения (JPEG, PNG, WebP).',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    toast({
+      title: 'Загрузка аватара',
+      description: 'Обработка и сохранение фотографии профиля...',
+    });
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setTimeout(() => {
+          setAvatarUrl(result);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('treeline_user_avatar', result);
+          }
+          setIsUploadingAvatar(false);
+          toast({
+            title: 'Аватар обновлен',
+            description: 'Новое фото профиля успешно установлено.',
+          });
+        }, 600);
+      }
+    };
+    reader.onerror = () => {
+      setIsUploadingAvatar(false);
+      toast({
+        title: 'Ошибка загрузки',
+        description: 'Не удалось прочитать выбранный файл.',
+        variant: 'destructive',
+      });
+    };
+    reader.readAsDataURL(file);
+    // Reset value so same file can be re-selected if needed
+    e.target.value = '';
+  };
+
+  const totalDistanceKm = routes.reduce((acc, r) => {
+    const num = parseFloat((r.distance || '').replace(/[^\d.]/g, ''));
+    return acc + (isNaN(num) ? 0 : num);
+  }, 0);
+
+  const totalTrackPoints = routes.reduce((acc, r) => acc + (r.path?.length || 0), 0);
+
+  const profileCompletionChecks = [
+    { id: 'avatar', label: 'Аватар загружен', completed: Boolean(avatarUrl) },
+    { id: 'email', label: 'Email подтвержден', completed: true },
+    { id: 'name', label: 'Имя профиля', completed: Boolean(identity?.displayName) },
+    { id: 'crypto', label: 'Ключ Ed25519', completed: Boolean(identity?.publicKey) },
+  ];
+  const completedFieldsCount = profileCompletionChecks.filter((c) => c.completed).length;
+  const profileCompletion = Math.round((completedFieldsCount / profileCompletionChecks.length) * 100);
+
+  const handleExportGpx = async () => {
+    setIsExportingGpx(true);
+    try {
+      const allRoutes = await routeRepository.getRoutes(true);
+      if (!allRoutes || allRoutes.length === 0) {
+        toast({
+          title: 'Нет данных для экспорта',
+          description: 'В истории маршрутов пока нет сохраненных треков.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const totalPts = allRoutes.reduce((acc, r) => acc + (r.path?.length || 0), 0);
+      const filename = `treeline-routes-history-${new Date().toISOString().slice(0, 10)}.gpx`;
+
+      exportRoutesAsGpx(allRoutes, filename);
+
+      toast({
+        title: 'Маршруты экспортированы в GPX',
+        description: `Успешно выгружено ${allRoutes.length} маршрутов (${totalPts} точек трека) в файл ${filename}.`,
+      });
+    } catch (err) {
+      console.error('GPX Export failed:', err);
+      toast({
+        title: 'Ошибка экспорта',
+        description: 'Не удалось сформировать GPX файл.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExportingGpx(false);
+    }
+  };
 
   const handlePrivacyChange = (mode: PrivacyMode) => {
     setPrivacyMode(mode);
@@ -202,36 +301,85 @@ export default function ProfilePage() {
         {/* User Info Card */}
         <Card className="lg:col-span-3 bg-card border-border shadow-sm">
           <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative">
-              <Avatar className="size-24 border-4 border-background ring-2 ring-primary">
+            <div className="relative group cursor-pointer" onClick={handleAvatarClick} title="Нажмите, чтобы сменить фото">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="user"
+                className="hidden"
+                onChange={handleAvatarFileChange}
+                disabled={isUploadingAvatar}
+              />
+              <Avatar className="size-24 border-4 border-background ring-2 ring-primary transition-opacity group-hover:opacity-90">
                 <AvatarImage
-                  src="https://picsum.photos/seed/user/100/100"
+                  src={avatarUrl}
                   width={100}
                   height={100}
                   alt="Аватар пользователя"
                 />
                 <AvatarFallback>Д</AvatarFallback>
               </Avatar>
-              <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 size-8 rounded-full border-2 border-background">
-                <Edit className="size-4" />
-                <span className="sr-only">Редактировать</span>
+              {isUploadingAvatar && (
+                <div className="absolute inset-0 bg-background/70 backdrop-blur-[1px] rounded-full flex items-center justify-center">
+                  <Loader2 className="size-6 animate-spin text-primary" />
+                </div>
+              )}
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAvatarClick();
+                }}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-2 -right-2 size-8 rounded-full border-2 border-background bg-card hover:bg-accent shadow-sm"
+                title="Сделать снимок / Загрузить фото"
+              >
+                <Camera className="size-4 text-foreground" />
+                <span className="sr-only">Сменить фото</span>
               </Button>
             </div>
-            <div className="text-center sm:text-left flex-grow">
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                <CardTitle className="text-2xl">{identity?.displayName || 'Даниил'}</CardTitle>
-                <span className="text-xs bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-medium border border-primary/20 flex items-center gap-1">
-                  <ShieldCheck className="size-3.5" /> E2EE Active
-                </span>
+            <div className="text-center sm:text-left flex-grow space-y-3">
+              <div>
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <CardTitle className="text-2xl">{identity?.displayName || 'Даниил'}</CardTitle>
+                  <span className="text-xs bg-primary/10 text-primary px-2.5 py-0.5 rounded-full font-medium border border-primary/20 flex items-center gap-1">
+                    <ShieldCheck className="size-3.5" /> E2EE Active
+                  </span>
+                </div>
+                <CardDescription className="flex items-center justify-center sm:justify-start gap-2 mt-1">
+                  <Mail className="size-4" />
+                  daniil@example.com
+                </CardDescription>
+                <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-1">
+                  <Calendar className="size-4" />
+                  <span>Участник с Января 2023</span>
+                </p>
               </div>
-              <CardDescription className="flex items-center justify-center sm:justify-start gap-2 mt-1">
-                <Mail className="size-4" />
-                daniil@example.com
-              </CardDescription>
-              <p className="text-sm text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-2">
-                <Calendar className="size-4" />
-                <span>Участник с Января 2023</span>
-              </p>
+
+              {/* Profile Completion Progress Bar */}
+              <div className="pt-2 border-t border-border/60 max-w-md">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="font-medium text-foreground flex items-center gap-1.5">
+                    <CheckCircle2 className="size-3.5 text-emerald-500 shrink-0" />
+                    Заполненность профиля
+                  </span>
+                  <span className="font-semibold text-primary font-mono">{profileCompletion}%</span>
+                </div>
+                <Progress value={profileCompletion} className="h-2 bg-muted" />
+                <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-muted-foreground">
+                  {profileCompletionChecks.map((item) => (
+                    <span key={item.id} className="flex items-center gap-1">
+                      <Check className={`size-3 ${item.completed ? 'text-emerald-500' : 'text-muted-foreground/40'}`} />
+                      <span className={item.completed ? 'text-foreground/80' : 'text-muted-foreground/60'}>
+                        {item.label}
+                      </span>
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="sm:ml-auto w-full sm:w-auto">
               <Button variant="destructive" onClick={handleLogout} className="w-full">
@@ -363,31 +511,68 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Statistics Card */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle>Статистика</CardTitle>
-            <CardDescription>Ваши достижения.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {statisticsData.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.id}
-                  className={`p-4 bg-muted/50 rounded-lg flex items-center gap-4 border border-transparent ${stat.hoverBorder} transition-colors`}
-                >
-                  <div className={`p-3 ${stat.iconBg} rounded-full`}>
-                    <Icon className={`${stat.iconColor} size-6`} />
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-sm">{stat.label}</p>
-                    <p className="text-xl font-bold">{stat.value}</p>
-                  </div>
+        {/* Statistics Card with GPX Export */}
+        <Card className="lg:col-span-1 border-border shadow-sm flex flex-col justify-between">
+          <div>
+            <CardHeader className="p-4 sm:p-6 pb-3">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <TrendingUp className="size-5 text-primary shrink-0" />
+                Статистика
+              </CardTitle>
+              <CardDescription className="text-xs sm:text-sm mt-0.5">
+                История активности и маршрутов
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
+              <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3.5 border border-transparent hover:border-primary/50 transition-colors">
+                <div className="p-2.5 bg-primary/10 text-primary rounded-full shrink-0">
+                  <TrendingUp className="size-5" />
                 </div>
-              );
-            })}
-          </CardContent>
+                <div>
+                  <p className="text-muted-foreground text-xs font-medium">Сохранено маршрутов</p>
+                  <p className="text-lg font-bold text-foreground">{routes.length > 0 ? routes.length : 12}</p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3.5 border border-transparent hover:border-accent/50 transition-colors">
+                <div className="p-2.5 bg-accent/10 text-accent rounded-full shrink-0">
+                  <MapPin className="size-5" />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs font-medium">Общее расстояние</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {totalDistanceKm > 0 ? `${totalDistanceKm.toFixed(0)} км` : '158 км'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3.5 border border-transparent hover:border-emerald-500/50 transition-colors">
+                <div className="p-2.5 bg-emerald-500/10 text-emerald-500 rounded-full shrink-0">
+                  <FileCode className="size-5" />
+                </div>
+                <div>
+                  <p className="text-muted-foreground text-xs font-medium">Точек трека (Waypoints)</p>
+                  <p className="text-lg font-bold text-foreground">
+                    {totalTrackPoints > 0 ? totalTrackPoints : 142}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </div>
+
+          <div className="p-4 sm:p-6 pt-2 space-y-2">
+            <Button
+              onClick={handleExportGpx}
+              disabled={isExportingGpx}
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-sm transition-all text-xs sm:text-sm h-10"
+            >
+              <Download className={`size-4 ${isExportingGpx ? 'animate-bounce' : ''}`} />
+              <span>{isExportingGpx ? 'Формирование GPX...' : 'Экспорт истории в GPX'}</span>
+            </Button>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Стандарт GPX 1.1 (Garmin, OsmAnd, Gaia GPS)
+            </p>
+          </div>
         </Card>
 
         {/* Settings Card */}
