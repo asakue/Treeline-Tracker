@@ -22,26 +22,10 @@ interface EmergencyMessage {
 const initialMessages: EmergencyMessage[] = [
   {
     id: '1',
-    name: 'Диспетчер',
-    avatar: 'https://picsum.photos/seed/dispatcher/40/40',
-    text: 'Экстренная служба на связи. Какая у вас ситуация?',
-    time: '11:01',
-    isSender: false,
-  },
-  {
-    id: '2',
-    name: 'Вы',
-    avatar: 'https://picsum.photos/seed/user/40/40',
-    text: 'Я заблудился, кажется, подвернул ногу.',
-    time: '11:02',
-    isSender: true,
-  },
-  {
-    id: '3',
-    name: 'Диспетчер',
-    avatar: 'https://picsum.photos/seed/dispatcher/40/40',
-    text: 'Понятно. Мы получили ваши координаты. Оставайтесь на месте, помощь уже в пути. Вы один?',
-    time: '11:03',
+    name: 'Дежурный МЧС',
+    avatar: '',
+    text: 'Экстренная служба МЧС на связи. Канал экстренной связи открыт. Опишите характер ситуации и ваше текущее состояние.',
+    time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
     isSender: false,
   },
 ];

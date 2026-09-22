@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import {
   Avatar,
   AvatarFallback,
@@ -15,10 +14,10 @@ import {
   Search,
   Info,
   Code,
+  User,
 } from 'lucide-react';
 import type { View } from '@/entities/app';
 import { useAppContext } from '@/entities/app';
-
 
 const menuItems = [
   {
@@ -41,12 +40,12 @@ const menuItems = [
     icon: Search,
     label: 'Поиск пропавшего туриста',
   },
-   {
+  {
     id: 'about' as View,
     icon: Info,
     label: 'О нас',
   },
-   {
+  {
     id: 'about-app' as View,
     icon: Code,
     label: 'О приложении',
@@ -58,26 +57,33 @@ type MobileMenuProps = {
 };
 
 export default function MobileMenu({ onNavigate }: MobileMenuProps) {
-  const { activeView } = useAppContext();
+  const { activeView, userProfile } = useAppContext();
+  const userInitial = userProfile.displayName ? userProfile.displayName.charAt(0).toUpperCase() : '';
   
   return (
     <div className="p-4 flex flex-col">
       <div
-        className="flex items-center gap-3 mb-4"
+        className="flex items-center gap-3 mb-4 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
         onClick={() => onNavigate('profile')}
       >
         <Avatar className="size-10">
-          <AvatarImage
-            src="https://picsum.photos/seed/user/40/40"
-            alt="Аватар пользователя"
-            width={40}
-            height={40}
-          />
-          <AvatarFallback>Д</AvatarFallback>
+          {userProfile.avatarUrl ? (
+            <AvatarImage
+              src={userProfile.avatarUrl}
+              alt={userProfile.displayName || 'Профиль'}
+              width={40}
+              height={40}
+            />
+          ) : null}
+          <AvatarFallback className="text-sm bg-primary/20 text-primary font-medium">
+            {userInitial || <User className="size-5" />}
+          </AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-semibold">Даниил</p>
-          <p className="text-sm text-muted-foreground">Профиль</p>
+          <p className="font-semibold text-foreground">
+            {userProfile.displayName || 'Мой профиль'}
+          </p>
+          <p className="text-xs text-muted-foreground">Нажмите для редактирования</p>
         </div>
       </div>
       <Separator className="mb-4" />

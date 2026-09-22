@@ -14,6 +14,7 @@ import {
   Siren,
   Info,
   Code,
+  User,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -75,7 +76,9 @@ const secondaryMenuItems = [
 ];
 
 const DesktopSidebar = memo(() => {
-  const { activeView, setView } = useAppContext();
+  const { activeView, setView, userProfile } = useAppContext();
+
+  const userInitial = userProfile.displayName ? userProfile.displayName.charAt(0).toUpperCase() : '';
 
   return (
     <Sidebar collapsible="icon">
@@ -167,21 +170,25 @@ const DesktopSidebar = memo(() => {
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              tooltip="Профиль пользователя"
+              tooltip={userProfile.displayName || 'Профиль пользователя'}
               onClick={() => setView('profile')}
               isActive={activeView === 'profile'}
             >
               <Avatar className="size-6 shrink-0">
-                <AvatarImage
-                  src="https://picsum.photos/seed/user/40/40"
-                  alt="Аватар пользователя"
-                  width={40}
-                  height={40}
-                />
-                <AvatarFallback>Д</AvatarFallback>
+                {userProfile.avatarUrl ? (
+                  <AvatarImage
+                    src={userProfile.avatarUrl}
+                    alt={userProfile.displayName || 'Профиль'}
+                    width={24}
+                    height={24}
+                  />
+                ) : null}
+                <AvatarFallback className="text-[11px] bg-primary/20 text-primary font-medium">
+                  {userInitial || <User className="size-3.5" />}
+                </AvatarFallback>
               </Avatar>
-              <span className="group-data-[collapsible=icon]:hidden">
-                Даниил
+              <span className="group-data-[collapsible=icon]:hidden truncate">
+                {userProfile.displayName || 'Мой профиль'}
               </span>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -1,12 +1,11 @@
 /**
- * @fileoverview LocalStorage Implementation of IRouteRepository
- * Provides resilient persistence and CRUD operations for routes.
+ * @fileoverview LocalStorage & Server-Synched Implementation of IRouteRepository
+ * Provides resilient persistence and CRUD operations for user-created routes.
  */
 
 import type { IRouteRepository } from './interfaces';
 import type { Route } from '../domain/types';
 import { RouteSchema } from '../domain/schemas';
-import { savedRoutes as defaultRoutes } from '@/entities/route/model/routes-data';
 
 const STORAGE_KEY = 'hiker_routes_data';
 
@@ -16,27 +15,8 @@ export class LocalStorageRouteRepository implements IRouteRepository {
   }
 
   async getRoutes(includeArchived = false): Promise<Route[]> {
-    if (!this.isClient()) {
-      return (defaultRoutes as Route[]).filter((r) => includeArchived || !r.isArchived);
-    }
-
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === null) {
-        await this.resetToDefaults();
-        return (defaultRoutes as Route[]).filter((r) => includeArchived || !r.isArchived);
-      }
-
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return (parsed as Route[]).filter((r) => includeArchived || !r.isArchived);
-      }
-
-      return (defaultRoutes as Route[]).filter((r) => includeArchived || !r.isArchived);
-    } catch (err) {
-      console.warn('Failed to parse routes from localStorage, using defaults:', err);
-      return (defaultRoutes as Route[]).filter((r) => includeArchived || !r.isArchived);
-    }
+    const all = await this.getAllRoutesInternal();
+    return all.filter((r) => includeArchived || !r.isArchived);
   }
 
   async getActiveRoutes(): Promise<Route[]> {
@@ -50,20 +30,35 @@ export class LocalStorageRouteRepository implements IRouteRepository {
 
   private async getAllRoutesInternal(): Promise<Route[]> {
     if (!this.isClient()) {
-      return defaultRoutes as Route[];
+      return [];
     }
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw === null) {
-        return defaultRoutes as Route[];
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed as Route[];
+        }
       }
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
-        return parsed as Route[];
+
+      // Sync from server if local storage is empty
+      try {
+        const res = await fetch('/api/routes?includeArchived=true');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            this.save(json.data);
+            return json.data;
+          }
+        }
+      } catch {
+        // Offline fallback
       }
-      return defaultRoutes as Route[];
+
+      return [];
     } catch (err) {
-      return defaultRoutes as Route[];
+      console.warn('Failed to parse routes from localStorage:', err);
+      return [];
     }
   }
 
@@ -81,6 +76,16 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     const routes = await this.getAllRoutesInternal();
     const updated = [validated, ...routes];
     this.save(updated);
+
+    // Sync to server in background
+    if (this.isClient()) {
+      fetch('/api/routes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated),
+      }).catch((e) => console.warn('Failed to sync route to server:', e));
+    }
+
     return validated;
   }
 
@@ -90,12 +95,23 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     const index = routes.findIndex((r) => r.id === validated.id);
 
     if (index === -1) {
-      throw new Error(`Route with id ${validated.id} not found`);
+      const updated = [validated, ...routes];
+      this.save(updated);
+      return validated;
     }
 
     const updated = [...routes];
     updated[index] = validated;
     this.save(updated);
+
+    if (this.isClient()) {
+      fetch('/api/routes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated),
+      }).catch((e) => console.warn('Failed to sync route update to server:', e));
+    }
+
     return validated;
   }
 
@@ -114,6 +130,15 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     const updated = [...routes];
     updated[index] = validated;
     this.save(updated);
+
+    if (this.isClient()) {
+      fetch('/api/routes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated),
+      }).catch((e) => console.warn('Failed to sync route archive to server:', e));
+    }
+
     return validated;
   }
 
@@ -132,6 +157,15 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     const updated = [...routes];
     updated[index] = validated;
     this.save(updated);
+
+    if (this.isClient()) {
+      fetch('/api/routes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated),
+      }).catch((e) => console.warn('Failed to sync route restore to server:', e));
+    }
+
     return validated;
   }
 
@@ -140,6 +174,13 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     const filtered = routes.filter((r) => r.id !== id);
     if (filtered.length === routes.length) return false;
     this.save(filtered);
+
+    if (this.isClient()) {
+      fetch(`/api/routes?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }).catch((e) => console.warn('Failed to sync route delete to server:', e));
+    }
+
     return true;
   }
 
@@ -151,8 +192,8 @@ export class LocalStorageRouteRepository implements IRouteRepository {
   }
 
   async resetToDefaults(): Promise<Route[]> {
-    this.save(defaultRoutes as Route[]);
-    return defaultRoutes as Route[];
+    this.save([]);
+    return [];
   }
 
   private save(routes: Route[]): void {

@@ -20,7 +20,7 @@ import { useToast } from '@/shared/hooks/use-toast';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 
 export default function GroupChat() {
-  const { groupsHook, activeGroupId, setActiveGroupId } = useAppContext();
+  const { groupsHook, activeGroupId, setActiveGroupId, setView } = useAppContext();
   const { groups } = groupsHook;
 
   const [selectedGroupId, setSelectedGroupId] = useState(
@@ -28,6 +28,29 @@ export default function GroupChat() {
   );
 
   const [newMessage, setNewMessage] = useState('');
+  const [userProfile, setUserProfile] = useState<{ displayName: string; avatar: string }>({
+    displayName: 'Вы',
+    avatar: '',
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedProfile = localStorage.getItem('treeline_user_profile');
+      const savedAvatar = localStorage.getItem('treeline_user_avatar');
+      if (savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile);
+          setUserProfile({
+            displayName: parsed.displayName || 'Вы',
+            avatar: savedAvatar || '',
+          });
+        } catch {}
+      } else if (savedAvatar) {
+        setUserProfile((prev) => ({ ...prev, avatar: savedAvatar }));
+      }
+    }
+  }, []);
+
   const [allChats, setAllChats] = useState(() => {
     try {
       if (typeof window === 'undefined') return initialGroupChats;
@@ -90,8 +113,8 @@ export default function GroupChat() {
       id: `g${selectedGroupId}m${Date.now()}-${Math.random()
         .toString(36)
         .substring(2, 9)}`,
-      name: 'Вы',
-      avatar: 'https://picsum.photos/seed/user/40/40',
+      name: userProfile.displayName || 'Вы',
+      avatar: userProfile.avatar || '',
       text: newMessage,
       time: new Date().toLocaleTimeString('ru-RU', {
         hour: '2-digit',
@@ -118,13 +141,18 @@ export default function GroupChat() {
 
   if (groups.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center bg-background p-4">
-        <div className="text-center">
-          <Users className="size-12 mx-auto text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">Группы не найдены</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Создайте группу в разделе "Трекер", чтобы начать общение.
+      <div className="h-full flex flex-col items-center justify-center bg-background p-6">
+        <div className="text-center max-w-sm space-y-3">
+          <div className="p-3 bg-muted rounded-full w-fit mx-auto">
+            <Users className="size-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground">Группы не созданы</h3>
+          <p className="text-sm text-muted-foreground">
+            Создайте группу в разделе "Трекер", чтобы начать защищенное общение по радиоканалу и через сервер.
           </p>
+          <Button onClick={() => setView('tracker')} className="mt-2">
+            Создать первую группу
+          </Button>
         </div>
       </div>
     );

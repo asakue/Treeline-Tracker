@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -30,20 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/ui/select';
-import { Check, ChevronsUpDown, UserPlus, Waypoints } from 'lucide-react';
+import { UserPlus, Waypoints, Trash2, ShieldCheck, User } from 'lucide-react';
 import { useToast } from '@/shared/hooks/use-toast';
-import { Popover, PopoverContent, PopoverTrigger } from '@/shared/ui/popover';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/shared/ui/command';
-import type { Group } from '@/entities/group';
-import { availableHikers } from '@/entities/group';
-import { cn } from '@/shared/lib/utils';
+import type { Group, Member } from '@/core/domain/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/shared/ui/avatar';
 import { Badge } from '@/shared/ui/badge';
 import { Label } from '@/shared/ui/label';
@@ -51,11 +40,10 @@ import { ScrollArea } from '@/shared/ui/scroll-area';
 import type { Route } from '@/entities/route';
 
 const formSchema = z.object({
-  name: z.string().min(3, 'Название должно содержать не менее 3 символов.'),
-  location: z.string().min(3, 'Укажите локацию.'),
+  name: z.string().min(2, 'Название должно содержать не менее 2 символов.'),
+  location: z.string().min(2, 'Укажите локацию.'),
   distance: z.string().min(1, 'Укажите дистанцию.'),
   difficulty: z.enum(['Легко', 'Средне', 'Сложно', 'Очень сложно']),
-  hikerIds: z.array(z.string()).min(1, 'Выберите хотя бы одного участника.'),
   routeId: z.string().optional(),
 });
 
@@ -77,6 +65,10 @@ export default function CreateGroupForm({
   const { toast } = useToast();
   const isEditing = !!groupToEdit;
 
+  const [membersList, setMembersList] = useState<Member[]>([]);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberRole, setNewMemberRole] = useState<'GUIDE' | 'MEDIC' | 'MEMBER'>('MEMBER');
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -84,69 +76,139 @@ export default function CreateGroupForm({
       location: '',
       distance: '',
       difficulty: 'Средне',
-      hikerIds: [],
       routeId: '',
     },
   });
 
   useEffect(() => {
+    // Get user profile name if available
+    let userName = 'Вы (Лидер)';
+    if (typeof window !== 'undefined') {
+      const savedProfile = localStorage.getItem('treeline_user_profile');
+      if (savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile);
+          if (parsed.displayName) {
+            userName = `${parsed.displayName} (Вы)`;
+          }
+        } catch {
+          // fallback
+        }
+      }
+    }
+
     if (groupToEdit) {
       form.reset({
         name: groupToEdit.name,
         location: groupToEdit.location,
         distance: groupToEdit.distance,
         difficulty: groupToEdit.difficulty,
-        hikerIds: groupToEdit.hikers.map(h => h.id),
         routeId: groupToEdit.routeId || '',
       });
+      setMembersList(groupToEdit.hikers || []);
     } else {
-        form.reset({
-            name: '',
-            location: '',
-            distance: '',
-            difficulty: 'Средне',
-            hikerIds: [],
-            routeId: '',
-        });
+      form.reset({
+        name: '',
+        location: '',
+        distance: '',
+        difficulty: 'Средне',
+        routeId: '',
+      });
+      // Default leader member
+      setMembersList([
+        {
+          id: `member_${Date.now()}_self`,
+          name: userName,
+          avatar: '',
+          role: 'LEADER',
+          status: 'На тропе',
+          battery: 98,
+          coords: '43.3550° с.ш., 42.4392° в.д.',
+          lastUpdate: 'только что',
+          lastUpdateTimestamp: Date.now(),
+        },
+      ]);
     }
+    setNewMemberName('');
   }, [groupToEdit, form, open]);
-
 
   const activeRoutes = availableRoutes.filter((r) => !r.isArchived);
 
   const handleRouteChange = (routeId: string) => {
-    const selectedRoute = activeRoutes.find(r => r.id === routeId);
+    const selectedRoute = activeRoutes.find((r) => r.id === routeId);
     if (selectedRoute) {
       form.setValue('location', selectedRoute.location);
       form.setValue('distance', selectedRoute.distance);
       form.setValue('difficulty', selectedRoute.difficulty);
       form.setValue('routeId', selectedRoute.id);
     }
-  }
+  };
+
+  const handleAddMember = () => {
+    if (!newMemberName.trim()) return;
+
+    const newMember: Member = {
+      id: `member_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      name: newMemberName.trim(),
+      avatar: '',
+      role: newMemberRole,
+      status: 'На тропе',
+      battery: 100,
+      coords: 'Ожидание геоданных',
+      lastUpdate: 'только что',
+      lastUpdateTimestamp: Date.now(),
+    };
+
+    setMembersList([...membersList, newMember]);
+    setNewMemberName('');
+  };
+
+  const handleRemoveMember = (id: string) => {
+    setMembersList(membersList.filter((m) => m.id !== id));
+  };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const hikers = availableHikers.filter(h => values.hikerIds.includes(h.id));
-    const { hikerIds, ...groupData } = values;
-    onGroupSubmit({ ...groupData, hikers }, groupToEdit?.id);
-    
+    if (membersList.length === 0) {
+      toast({
+        title: 'Участники не добавлены',
+        description: 'Добавьте хотя бы одного участника в группу.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const groupPayload: Omit<Group, 'id'> = {
+      name: values.name,
+      location: values.location,
+      distance: values.distance,
+      difficulty: values.difficulty,
+      routeId: values.routeId || undefined,
+      hikers: membersList,
+    };
+
+    onGroupSubmit(groupPayload, groupToEdit?.id);
+
     toast({
       title: isEditing ? 'Группа обновлена!' : 'Группа создана!',
-      description: `Группа "${values.name}" была успешно сохранена.`,
+      description: `Группа "${values.name}" с ${membersList.length} участник(ами) сохранена.`,
     });
     onOpenChange(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Редактировать группу' : 'Создание новой группы'}</DialogTitle>
           <DialogDescription>
-            {isEditing ? 'Измените информацию о группе.' : 'Заполните информацию, выберите маршрут и добавьте участников.'}
+            {isEditing
+              ? 'Измените параметры группы и состав участников.'
+              : 'Задайте название, маршрут и добавьте участников группы.'}
           </DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
             <FormField
               control={form.control}
               name="name"
@@ -154,51 +216,64 @@ export default function CreateGroupForm({
                 <FormItem>
                   <FormLabel>Название группы</FormLabel>
                   <FormControl>
-                    <Input placeholder="например, Поход на выходные" {...field} />
+                    <Input placeholder="например, Поход на перевал Азау" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="routeId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-2"><Waypoints className="size-4"/> Выбрать маршрут (опционально)</FormLabel>
-                   <Select onValueChange={(value) => { field.onChange(value); handleRouteChange(value); }} value={field.value}>
+            {activeRoutes.length > 0 && (
+              <FormField
+                control={form.control}
+                name="routeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      <Waypoints className="size-4 text-primary" /> Выбрать из созданных маршрутов
+                    </FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleRouteChange(value);
+                      }}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Выберите из созданных маршрутов" />
+                          <SelectValue placeholder="Выберите маршрут для автозаполнения" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <ScrollArea className="h-48">
+                        <ScrollArea className="h-40">
                           {activeRoutes.map((route, idx) => (
-                              <SelectItem key={`form-route-${route.id}-${idx}`} value={route.id}>{route.name}</SelectItem>
+                            <SelectItem key={`form-route-${route.id}-${idx}`} value={route.id}>
+                              {route.name} ({route.distance})
+                            </SelectItem>
                           ))}
                         </ScrollArea>
                       </SelectContent>
                     </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Локация</FormLabel>
+                  <FormLabel>Локация / Регион</FormLabel>
                   <FormControl>
-                    <Input placeholder="например, Архыз, долина реки" {...field} />
+                    <Input placeholder="например, Кавказ, Приэльбрусье" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -237,99 +312,94 @@ export default function CreateGroupForm({
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="hikerIds"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Участники</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            'w-full justify-between',
-                            !field.value?.length && 'text-muted-foreground'
-                          )}
-                        >
-                          <div className='flex gap-2 items-center'>
-                            <UserPlus className="size-4" />
-                           {field.value?.length > 0
-                            ? `${field.value.length} участник(а/ов) выбрано`
-                            : 'Выберите участников'}
-                          </div>
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                      <Command>
-                        <CommandInput placeholder="Поиск участника..." />
-                        <CommandEmpty>Участник не найден.</CommandEmpty>
-                        <CommandGroup>
-                          <CommandList>
-                            {availableHikers.map((hiker, idx) => (
-                              <CommandItem
-                                value={hiker.name}
-                                key={`form-hiker-${hiker.id}-${idx}`}
-                                onSelect={() => {
-                                  const selectedIds = field.value || [];
-                                  const newIds = selectedIds.includes(hiker.id)
-                                    ? selectedIds.filter((id) => id !== hiker.id)
-                                    : [...selectedIds, hiker.id];
-                                  field.onChange(newIds);
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    'mr-2 h-4 w-4',
-                                    field.value?.includes(hiker.id)
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  )}
-                                />
-                                <Avatar className="mr-2 size-6">
-                                  <AvatarImage src={hiker.avatar} alt={hiker.name} />
-                                  <AvatarFallback>{hiker.name[0]}</AvatarFallback>
-                                </Avatar>
-                                {hiker.name}
-                              </CommandItem>
-                            ))}
-                          </CommandList>
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {form.watch('hikerIds')?.length > 0 && (
-              <div className="space-y-2">
-                 <Label>Выбранные участники:</Label>
-                  <div className="flex flex-wrap gap-2">
-                      {availableHikers
-                        .filter(h => form.watch('hikerIds').includes(h.id))
-                        .map((hiker, idx) => (
-                          <Badge key={`form-selected-badge-${hiker.id}-${idx}`} variant="secondary" className="flex items-center gap-2">
-                             <Avatar className="mr-1 size-4">
-                                <AvatarImage src={hiker.avatar} alt={hiker.name} />
-                                <AvatarFallback>{hiker.name[0]}</AvatarFallback>
-                              </Avatar>
-                              {hiker.name}
-                          </Badge>
-                        ))
-                      }
-                  </div>
+
+            {/* Participants / Members Management */}
+            <div className="space-y-3 pt-2 border-t border-border">
+              <Label className="text-sm font-semibold flex items-center justify-between">
+                <span>Участники группы ({membersList.length})</span>
+                <span className="text-[11px] text-muted-foreground font-normal">E2EE Mesh Ready</span>
+              </Label>
+
+              {/* Add Member Row */}
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Имя нового участника..."
+                  value={newMemberName}
+                  onChange={(e) => setNewMemberName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddMember();
+                    }
+                  }}
+                  className="flex-1 text-sm"
+                />
+                <Select
+                  value={newMemberRole}
+                  onValueChange={(v) => setNewMemberRole(v as 'GUIDE' | 'MEDIC' | 'MEMBER')}
+                >
+                  <SelectTrigger className="w-[120px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MEMBER">Участник</SelectItem>
+                    <SelectItem value="GUIDE">Гид / Проводник</SelectItem>
+                    <SelectItem value="MEDIC">Медик</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleAddMember}
+                  disabled={!newMemberName.trim()}
+                  className="shrink-0"
+                >
+                  <UserPlus className="size-4 mr-1" />
+                  Добавить
+                </Button>
               </div>
-            )}
+
+              {/* Members List Chips */}
+              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto p-1">
+                {membersList.map((member) => (
+                  <Badge
+                    key={member.id}
+                    variant="secondary"
+                    className="flex items-center gap-1.5 py-1 px-2.5 bg-muted text-foreground border border-border"
+                  >
+                    <Avatar className="size-4">
+                      <AvatarImage src={member.avatar} alt={member.name} />
+                      <AvatarFallback className="text-[9px] bg-primary/20 text-primary">
+                        {member.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-xs">{member.name}</span>
+                    {member.role && (
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        ({member.role === 'LEADER' ? 'Лидер' : member.role === 'GUIDE' ? 'Гид' : member.role === 'MEDIC' ? 'Медик' : 'Участник'})
+                      </span>
+                    )}
+                    {membersList.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMember(member.id)}
+                        className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="size-3" />
+                      </button>
+                    )}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
             <DialogFooter className="pt-4">
               <DialogClose asChild>
-                <Button type="button" variant="secondary">Отмена</Button>
+                <Button type="button" variant="secondary">
+                  Отмена
+                </Button>
               </DialogClose>
-              <Button type="submit">{isEditing ? 'Сохранить' : 'Создать группу'}</Button>
+              <Button type="submit">{isEditing ? 'Сохранить изменения' : 'Создать группу'}</Button>
             </DialogFooter>
           </form>
         </Form>

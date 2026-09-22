@@ -1,12 +1,11 @@
 /**
- * @fileoverview LocalStorage Implementation of IGroupRepository
- * Ensures resilient offline-first persistence of groups and members.
+ * @fileoverview LocalStorage & Server-Synched Implementation of IGroupRepository
+ * Ensures resilient offline-first persistence of user-created groups and members.
  */
 
 import type { IGroupRepository } from './interfaces';
 import type { Group, Member, LocationUpdate } from '../domain/types';
 import { GroupSchema } from '../domain/schemas';
-import { groups as defaultGroups } from '@/entities/group/model/groups-data';
 
 const STORAGE_KEY = 'hiker_groups_data';
 
@@ -17,26 +16,36 @@ export class LocalStorageGroupRepository implements IGroupRepository {
 
   async getGroups(): Promise<Group[]> {
     if (!this.isClient()) {
-      return defaultGroups as Group[];
+      return [];
     }
 
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        // Initialize default seed data
-        await this.resetToDefaults();
-        return defaultGroups as Group[];
+      if (raw !== null) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed as Group[];
+        }
       }
 
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed as Group[];
+      // Try fetching from server API if local is empty
+      try {
+        const res = await fetch('/api/groups');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data)) {
+            this.save(json.data);
+            return json.data;
+          }
+        }
+      } catch {
+        // Offline / network failure fallback
       }
 
-      return defaultGroups as Group[];
+      return [];
     } catch (err) {
-      console.warn('Failed to parse groups from localStorage, using fallback:', err);
-      return defaultGroups as Group[];
+      console.warn('Failed to parse groups from localStorage:', err);
+      return [];
     }
   }
 
@@ -50,6 +59,16 @@ export class LocalStorageGroupRepository implements IGroupRepository {
     const groups = await this.getGroups();
     const updated = [...groups, validated];
     this.save(updated);
+
+    // Sync to server in background
+    if (this.isClient()) {
+      fetch('/api/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated),
+      }).catch((e) => console.warn('Failed to sync group to server:', e));
+    }
+
     return validated;
   }
 
@@ -59,12 +78,25 @@ export class LocalStorageGroupRepository implements IGroupRepository {
     const index = groups.findIndex((g) => g.id === validated.id);
 
     if (index === -1) {
-      throw new Error(`Group with id ${validated.id} not found`);
+      // If not found, add it
+      const updated = [...groups, validated];
+      this.save(updated);
+      return validated;
     }
 
     const updated = [...groups];
     updated[index] = validated;
     this.save(updated);
+
+    // Sync to server
+    if (this.isClient()) {
+      fetch('/api/groups', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(validated),
+      }).catch((e) => console.warn('Failed to sync group update to server:', e));
+    }
+
     return validated;
   }
 
@@ -73,6 +105,14 @@ export class LocalStorageGroupRepository implements IGroupRepository {
     const filtered = groups.filter((g) => g.id !== id);
     if (filtered.length === groups.length) return false;
     this.save(filtered);
+
+    // Sync deletion to server
+    if (this.isClient()) {
+      fetch(`/api/groups?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
+      }).catch((e) => console.warn('Failed to sync group deletion to server:', e));
+    }
+
     return true;
   }
 
@@ -146,15 +186,14 @@ export class LocalStorageGroupRepository implements IGroupRepository {
   }
 
   async resetToDefaults(): Promise<Group[]> {
-    this.save(defaultGroups as Group[]);
-    return defaultGroups as Group[];
+    this.save([]);
+    return [];
   }
 
   private save(groups: Group[]): void {
     if (!this.isClient()) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(groups));
-      // Dispatch custom event for cross-tab or same-window sync
       window.dispatchEvent(new Event('hiker_groups_updated'));
     } catch (err) {
       console.error('Failed to save groups to localStorage:', err);
