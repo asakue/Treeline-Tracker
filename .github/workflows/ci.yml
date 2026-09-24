@@ -24,14 +24,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Secret Scan (TruffleHog / Git Secrets Check)
-        run: |
-          echo "Scanning for accidental secrets..."
-          # Fail if accidental plain text private keys or .env are tracked
-          if git ls-files | grep -E '(\.env$|\.env\.local$|\.pem$|\.key$)'; then
-            echo "Error: Secret or environment file tracked in git repository!"
-            exit 1
-          fi
+      - name: TruffleHog OSS Secret Scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified
+        continue-on-error: true
+
+      - name: Pre-commit Security & Credential Scanner
+        run: npm run security:scan
+
 
       - name: Type Check
         run: npm run typecheck

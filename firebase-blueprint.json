@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with RBAC role and affiliation",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier matching auth.uid" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "displayName": { "type": "string", "maxLength": 100, "description": "Hiker display name" },
+        "role": { "type": "string", "enum": ["hiker", "leader", "guide", "operator", "rescuer", "admin"], "description": "RBAC user role" },
+        "activeGroupId": { "type": "string", "description": "Currently active group identifier" },
+        "lastSeen": { "type": "string", "description": "Last activity timestamp" },
+        "createdAt": { "type": "string", "description": "Profile creation timestamp" }
+      },
+      "required": ["uid", "role"]
+    },
+    "Group": {
+      "title": "Group",
+      "description": "Hiking group expedition led by a leader/guide",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Group ID" },
+        "name": { "type": "string", "maxLength": 120, "description": "Group name" },
+        "guideId": { "type": "string", "description": "UID of the group leader/guide" },
+        "memberIds": { "type": "array", "description": "List of hiker UIDs in the group" },
+        "routeId": { "type": "string", "description": "Assigned route ID" },
+        "status": { "type": "string", "enum": ["planned", "active", "completed", "emergency"], "description": "Current group status" },
+        "currentSector": { "type": "string", "description": "Active mountain sector" },
+        "updatedAt": { "type": "string", "description": "Last updated timestamp" }
+      },
+      "required": ["name", "guideId", "status"]
+    },
+    "Telemetry": {
+      "title": "Telemetry",
+      "description": "Hiker real-time GPS coordinate telemetry with geohash",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Author UID" },
+        "groupId": { "type": "string", "description": "Active group UID" },
+        "latitude": { "type": "number", "description": "Latitude between -90 and 90" },
+        "longitude": { "type": "number", "description": "Longitude between -180 and 180" },
+        "altitude": { "type": "number", "description": "Elevation in meters" },
+        "batteryLevel": { "type": "number", "description": "Battery percentage 0-100" },
+        "speed": { "type": "number", "description": "Speed in m/s" },
+        "geohash": { "type": "string", "maxLength": 12, "description": "Geohash spatial index" },
+        "timestamp": { "type": "string", "description": "Server or device timestamp" }
+      },
+      "required": ["userId", "latitude", "longitude"]
+    },
+    "Route": {
+      "title": "Route",
+      "description": "Trail route with waypoints and elevation metadata",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Route ID" },
+        "groupId": { "type": "string", "description": "Group ID using this route" },
+        "name": { "type": "string", "maxLength": 120, "description": "Route title" },
+        "waypoints": { "type": "array", "description": "List of coordinate waypoints" },
+        "distanceKm": { "type": "number", "description": "Total distance in km" },
+        "elevationGainM": { "type": "number", "description": "Elevation gain in meters" },
+        "version": { "type": "number", "description": "OCC concurrency revision counter" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["name"]
+    },
+    "Emergency": {
+      "title": "Emergency",
+      "description": "Emergency incident and SOS beacon dispatch",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Incident ID" },
+        "groupId": { "type": "string", "description": "Group experiencing emergency" },
+        "reporterId": { "type": "string", "description": "UID of the person reporting the emergency" },
+        "severity": { "type": "string", "enum": ["low", "medium", "critical", "sos"], "description": "Incident severity" },
+        "location": { "type": "object", "description": "Incident coordinates" },
+        "sarZone": { "type": "object", "description": "AI-generated SAR search area" },
+        "messages": { "type": "array", "description": "Emergency dispatch messages" },
+        "status": { "type": "string", "enum": ["open", "dispatched", "resolved"], "description": "Incident status" }
+      },
+      "required": ["reporterId", "severity", "status"]
+    },
+    "SarAuditLog": {
+      "title": "SarAuditLog",
+      "description": "Audit trail log of Search and Rescue AI inferences",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "operatorId": { "type": "string", "description": "Operator UID who requested AI assessment" },
+        "timestamp": { "type": "string", "description": "Inference timestamp" },
+        "model": { "type": "string", "description": "AI Model version" },
+        "promptHash": { "type": "string", "description": "Hash of input prompt parameters" },
+        "confidence": { "type": "number", "description": "Calculated confidence score" }
+      },
+      "required": ["operatorId", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles and RBAC permissions"
+    },
+    "/groups/{groupId}": {
+      "schema": "Group",
+      "description": "Expedition groups managed by leaders"
+    },
+    "/telemetry/{telemetryId}": {
+      "schema": "Telemetry",
+      "description": "Real-time hiker GPS coordinates"
+    },
+    "/routes/{routeId}": {
+      "schema": "Route",
+      "description": "Expedition route trails and waypoints"
+    },
+    "/emergencies/{emergencyId}": {
+      "schema": "Emergency",
+      "description": "Emergency incidents and SOS operations"
+    },
+    "/sar_audit_logs/{logId}": {
+      "schema": "SarAuditLog",
+      "description": "Immutable SAR AI inference audit trail"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Treeline Tracker - Pre-commit Hook
+# Prevents accidental commits of secret keys, .env files, and credentials
+# ==============================================================================
+
+set -e
+
+echo "🔍 [Pre-commit] Checking for secret leaks and credential exposure..."
+
+# 1. TruffleHog check (if installed or dockerized)
+if command -v trufflehog >/dev/null 2>&1; then
+  echo "🛡️ TruffleHog detected. Running verification scan..."
+  trufflehog git file://. --since-commit HEAD --fail --exclude-paths=.gitignore || {
+    echo "❌ TruffleHog detected credentials in staged files! Aborting commit."
+    exit 1
+  }
+elif command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+  echo "🛡️ TruffleHog via Docker checking staged changes..."
+  docker run --rm -v "$(pwd):/pwd" trufflesecurity/trufflehog:latest git file:///pwd --since-commit HEAD --fail || true
+fi
+
+# 2. Native Multi-pattern Secret & Dangerous Files Scan
+node scripts/secret-scan.mjs --pre-commit
+
+echo "✅ [Pre-commit] Security verification passed."
+exit 0

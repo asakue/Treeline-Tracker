@@ -1,100 +1,217 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for Auth and RBAC
+    // =========================================================================
+    // 0. Default Deny Catch-All
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================================
+    // 1. Core Authentication & RBAC Helper Functions
+    // =========================================================================
+
     function isAuthenticated() {
       return request.auth != null;
-    }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
-
-    function getUserRole() {
-      return request.auth.token.role != null 
-        ? request.auth.token.role 
-        : getUserData().role;
-    }
-
-    function isRescuerOrAdmin() {
-      return isAuthenticated() && (getUserRole() == 'rescuer' || getUserRole() == 'admin');
-    }
-
-    function isGuide() {
-      return isAuthenticated() && (getUserRole() == 'guide' || isRescuerOrAdmin());
     }
 
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Users Collection
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role in ['hiker', 'guide'];
-      allow update: if isAuthenticated() && (isOwner(userId) || isRescuerOrAdmin());
-      allow delete: if isRescuerOrAdmin();
+    function hasUserDoc() {
+      return isAuthenticated() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
-    // Telemetry Collection (Real-time hiker coordinates)
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Resolves role either from Custom Claims (JWT token) or the Firestore user record
+    function getUserRole() {
+      return request.auth.token.role != null
+        ? request.auth.token.role
+        : (hasUserDoc() ? getUserData().role : 'hiker');
+    }
+
+    // Role predicates:
+    // - Hiker: standard trail participant
+    // - Leader: guide or expedition leader
+    // - Operator: emergency search-and-rescue coordinator or administrator
+    function isHiker() {
+      return isAuthenticated();
+    }
+
+    function isLeader() {
+      return isAuthenticated() && (
+        getUserRole() in ['leader', 'guide'] ||
+        isOperator()
+      );
+    }
+
+    function isOperator() {
+      return isAuthenticated() && (
+        getUserRole() in ['operator', 'rescuer', 'admin']
+      );
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        getUserRole() == 'admin'
+      );
+    }
+
+    // Checks if the user is a designated member or leader of a group
+    function isGroupMember(groupData) {
+      return isAuthenticated() && (
+        groupData.guideId == request.auth.uid ||
+        (groupData.memberIds is list && groupData.memberIds.hasAny([request.auth.uid]))
+      );
+    }
+
+    // =========================================================================
+    // 2. Users Collection (/users/{userId})
+    // =========================================================================
+    match /users/{userId} {
+      // Hikers can read their own profile; operators have sector-wide read access
+      allow get: if isOwner(userId) || isOperator();
+      allow list: if isAuthenticated() && (resource.data.uid == request.auth.uid || isOperator());
+
+      // On creation, users cannot self-assign elevated roles ('operator', 'admin')
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.role in ['hiker', 'leader', 'guide'];
+
+      // Users can update their profile, but cannot escalate their own role without operator privilege
+      allow update: if isAuthenticated() && (
+        (isOwner(userId) && request.resource.data.role == resource.data.role) ||
+        isOperator()
+      );
+
+      // Only administrators can delete user accounts
+      allow delete: if isAdmin();
+    }
+
+    // =========================================================================
+    // 3. Telemetry Collection (/telemetry/{telemetryId})
+    // =========================================================================
     match /telemetry/{telemetryId} {
-      // Hikers can read telemetry of their own group; rescuers can read all
-      allow read: if isAuthenticated();
-      
-      // Only the user themselves can record their own telemetry
-      allow create: if isAuthenticated() 
+      // Hikers can view their own telemetry; leaders can view their group; operators view all
+      allow get: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isOperator() ||
+        (resource.data.groupId != null &&
+         exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+         isGroupMember(get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data))
+      );
+
+      allow list: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isOperator() ||
+        (resource.data.groupId != null &&
+         exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+         isGroupMember(get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data))
+      );
+
+      // Only the authenticated hiker can emit their own GPS telemetry with coordinate bounds
+      allow create: if isAuthenticated()
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.latitude is number
         && request.resource.data.latitude >= -90.0 && request.resource.data.latitude <= 90.0
         && request.resource.data.longitude is number
         && request.resource.data.longitude >= -180.0 && request.resource.data.longitude <= 180.0;
-        
-      allow update, delete: if isRescuerOrAdmin();
+
+      allow update, delete: if isOperator();
     }
 
-    // Hiking Groups
+    // =========================================================================
+    // 4. Hiking Groups (/groups/{groupId})
+    // =========================================================================
     match /groups/{groupId} {
-      allow read: if isAuthenticated();
-      allow create: if isGuide();
+      // Hikers view groups they are part of; operators view all groups in sector
+      allow get: if isAuthenticated() && (isGroupMember(resource.data) || isOperator());
+      allow list: if isAuthenticated() && (isGroupMember(resource.data) || isOperator());
+
+      // Only Leaders or Operators can create new hiking groups
+      allow create: if isLeader() && request.resource.data.guideId == request.auth.uid;
+
+      // Group leaders can update their group; operators can update emergency status;
+      // Hikers can self-join/leave by modifying only 'memberIds' with their own UID
       allow update: if isAuthenticated() && (
-        resource.data.guideId == request.auth.uid || 
-        isRescuerOrAdmin() ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds']) && resource.data.memberIds.hasAny([request.auth.uid]))
+        (resource.data.guideId == request.auth.uid) ||
+        isOperator() ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds']) &&
+         (request.resource.data.memberIds.hasAny([request.auth.uid]) ||
+          resource.data.memberIds.hasAny([request.auth.uid])))
       );
-      allow delete: if isGuide() && (resource.data.guideId == request.auth.uid || isRescuerOrAdmin());
+
+      allow delete: if isOperator() || (isLeader() && resource.data.guideId == request.auth.uid);
     }
 
-    // Routes
+    // =========================================================================
+    // 5. Routes & Trails (/routes/{routeId})
+    // =========================================================================
     match /routes/{routeId} {
+      // Route descriptions and waypoints are readable by all authenticated hikers
       allow read: if isAuthenticated();
-      allow create, update: if isGuide();
-      allow delete: if isGuide() || isRescuerOrAdmin();
-    }
 
-    // Emergencies and SOS Operations
-    match /emergencies/{emergencyId} {
-      // Any authenticated user can read emergencies relevant to their group; rescuers see everything
-      allow read: if isAuthenticated();
-      
-      // Any authenticated hiker can trigger an emergency / SOS beacon
-      allow create: if isAuthenticated() 
-        && request.resource.data.reporterId == request.auth.uid;
-      
-      // Rescuers can update status, assign rescue units, or update SAR polygons
-      allow update: if isAuthenticated() && (
-        isRescuerOrAdmin() || 
-        resource.data.reporterId == request.auth.uid
+      // Only leaders and operators can define or publish trail routes
+      allow create: if isLeader();
+
+      allow update: if isLeader() && (
+        !('guideId' in resource.data) ||
+        resource.data.guideId == request.auth.uid ||
+        isOperator()
       );
-      
-      allow delete: if isRescuerOrAdmin();
+
+      allow delete: if isOperator() || (isLeader() && resource.data.guideId == request.auth.uid);
     }
 
-    // SAR AI Audit Logs
+    // =========================================================================
+    // 6. Emergencies & SOS Operations (/emergencies/{emergencyId})
+    // =========================================================================
+    match /emergencies/{emergencyId} {
+      // Group members and operators can access active emergency records
+      allow get, list: if isAuthenticated() && (
+        resource.data.reporterId == request.auth.uid ||
+        isOperator() ||
+        (resource.data.groupId != null &&
+         exists(/databases/$(database)/documents/groups/$(resource.data.groupId)) &&
+         isGroupMember(get(/databases/$(database)/documents/groups/$(resource.data.groupId)).data))
+      );
+
+      // Any hiker, leader, or operator can trigger an SOS beacon or report an incident
+      allow create: if isAuthenticated()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.severity in ['low', 'medium', 'critical', 'sos'];
+
+      // Operators can dispatch SAR units, update search polygons, or resolve status;
+      // Reporters can add messages or cancel false alarms
+      allow update: if isAuthenticated() && (
+        isOperator() ||
+        (resource.data.reporterId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['messages', 'status', 'location']))
+      );
+
+      allow delete: if isOperator();
+    }
+
+    // =========================================================================
+    // 7. SAR AI Audit Trail (/sar_audit_logs/{logId})
+    // =========================================================================
     match /sar_audit_logs/{logId} {
-      allow read: if isRescuerOrAdmin();
-      allow create: if isAuthenticated();
-      allow update, delete: if false; // Immutable audit trail
+      // Operators and Admins can audit AI search inferences
+      allow read: if isOperator();
+
+      // Recorded automatically on AI suggestion calculation
+      allow create: if isAuthenticated()
+        && request.resource.data.operatorId == request.auth.uid;
+
+      // Immutable audit records cannot be modified or deleted
+      allow update, delete: if false;
     }
   }
 }
