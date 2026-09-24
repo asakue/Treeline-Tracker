@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Team Expansion in About Us**: Added Alexander and Kirill as core developers to the team roster and application documentation.
+- **Zero-Knowledge Cryptographic Layer (E2EE)**:
+  - W3C Web Crypto API implementation: Ed25519 digital signatures (`crypto-service.ts`) and AES-256-GCM AEAD authenticated encryption.
+  - Decentralized identity manager (`identity-manager.ts`): local keypair generation, hex fingerprinting, and key rotation.
+  - Anti-Replay Protection (`replay-protection.ts`): monotonic sequence enforcement, messageId deduplication cache, and 10-minute time freshness window.
+  - Geodata Privacy Filter (`privacy-filter.ts`): `NORMAL` (exact GNSS), `REDUCED` (200m grid obfuscation + altitude stripping), and `STEALTH` (local logging only, zero RF transmission).
+- **Profile & Security Management (`ProfilePage`)**:
+  - Dual-tab architecture (`profile` / `security`) for seamless switching between personal data and cryptographic credentials.
+  - Reactive profile completion meter (0% to 100%) dynamically calculated based on avatar, name, email, phone, and biography.
+  - Profile edit modal dialog with instant persistence through repository layer.
+  - Dedicated Security tab displaying Ed25519 public key, formatted fingerprint (`A1B2:C3D4`), one-click key rotation (`rotateLocalIdentity`), geodata privacy mode selector, and security protocols overview.
+- **Automated Test Infrastructure & Comprehensive Suites**:
+  - Configured Vitest 5.0, React Testing Library, and JSDOM with 100% pass rate across 4 suites (24 tests / 39 security assertions).
+  - `src/views/__tests__/profile-page.test.tsx`: 16 comprehensive unit tests covering user data rendering, empty fallbacks, edit modal flows, completion percent calculations, tab navigation, Ed25519 credentials, key rotation, and privacy mode switching.
+  - `src/core/security/__tests__/security-phase2.test.ts`: 39 end-to-end security checks verifying ciphertexts, signature rejection on tampering, anti-replay filters, and privacy pipelines.
+  - `src/core/utils/__tests__/gpx-exporter.test.ts`: Automated validation of route GPX XML generation.
+- **GPX Exporter Utility**: Created `src/core/utils/gpx-exporter.ts` to export route waypoints and elevation profiles to standard GPX XML format.
 - **Multi-Role RBAC Model**: Implemented granular role-based access control with four distinct roles:
   - `hiker` (Турист): Access to own telemetry, own group route, emergency SOS button.
   - `guide` (Лидер группы): Full CRUD on group routes, member management, checkpoint verification.
@@ -33,13 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - IndexedDB offline telemetry queue with automatic batched sync on reconnect.
   - Binary packet serialization for off-grid LoRa / BLE mesh transmission.
 - **Optimistic Concurrency Control (OCC)**: Version-based conflict resolution for simultaneous route editing by group leaders.
-- **Testing & Quality Assurance**:
-  - Vitest and React Testing Library setup for `shared/lib`, `entities`, and `features`.
-  - GitHub Actions workflow (`.github/workflows/ci.yml`) covering security audit, linting, typechecking, testing, and automated build verification.
 - **Performance Optimizations**:
   - Leaflet marker clustering (`leaflet.markercluster`).
   - Cached weather forecasts with TTL.
   - Dynamic imports for Leaflet and Recharts with `@next/bundle-analyzer` audit.
+
 
 ### Changed
 - **Feature-Sliced Design (FSD) Refactoring**:

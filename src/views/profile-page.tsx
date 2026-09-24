@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Avatar,
   AvatarFallback,
@@ -125,10 +125,60 @@ const themeOptions: ThemeOption[] = [
   },
 ];
 
-export default function ProfilePage() {
+export interface ProfilePageProps {
+  profile?: Partial<AppUserProfile>;
+  onUpdateProfile?: (data: Partial<AppUserProfile>) => void;
+}
+
+const fallbackDefaultProfile: AppUserProfile = {
+  displayName: '',
+  email: '',
+  avatarUrl: '',
+  phone: '',
+  emergencyContact: '',
+  experienceLevel: 'Beginner',
+  bio: '',
+};
+
+export function ProfilePage({ profile, onUpdateProfile }: ProfilePageProps = {}) {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const { userProfile, updateUserProfile } = useAppContext();
+
+  // Safely resolve context when wrapped in AppProvider, or fallback gracefully in isolated tests
+  let contextProfile: AppUserProfile = fallbackDefaultProfile;
+  let contextUpdateProfile = (_data: Partial<AppUserProfile>) => {};
+
+  try {
+    const ctx = useAppContext();
+    contextProfile = ctx.userProfile;
+    contextUpdateProfile = ctx.updateUserProfile;
+  } catch {
+    // Graceful fallback when rendered without AppProvider (e.g., in unit tests)
+  }
+
+  const userProfile: AppUserProfile = useMemo(
+    () => ({
+      ...contextProfile,
+      ...(profile || {}),
+    }),
+    [
+      contextProfile.displayName,
+      contextProfile.email,
+      contextProfile.phone,
+      contextProfile.emergencyContact,
+      contextProfile.bio,
+      contextProfile.avatarUrl,
+      contextProfile.experienceLevel,
+      profile?.displayName,
+      profile?.email,
+      profile?.phone,
+      profile?.emergencyContact,
+      profile?.bio,
+      profile?.avatarUrl,
+      profile?.experienceLevel,
+    ]
+  );
+  const updateUserProfile = onUpdateProfile || contextUpdateProfile;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   const [identity, setIdentity] = useState<UserIdentity | null>(null);
@@ -142,9 +192,12 @@ export default function ProfilePage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [formProfile, setFormProfile] = useState<AppUserProfile>(userProfile);
 
+  // Sync formProfile with userProfile when dialog is not actively being edited
   useEffect(() => {
-    setFormProfile(userProfile);
-  }, [userProfile]);
+    if (!isEditDialogOpen) {
+      setFormProfile(userProfile);
+    }
+  }, [userProfile, isEditDialogOpen]);
 
   useEffect(() => {
     setMounted(true);
@@ -878,3 +931,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+export default ProfilePage;

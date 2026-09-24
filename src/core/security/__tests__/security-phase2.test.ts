@@ -10,6 +10,7 @@ import { ReplayProtection } from '../replay-protection';
 import { IdentityManager } from '../identity-manager';
 import { SecurePacketService } from '../secure-packet-service';
 import { LocationUpdate, SecurePacket } from '../../domain/types';
+import { describe, it } from 'vitest';
 
 let totalTests = 0;
 let passedTests = 0;
@@ -265,3 +266,10 @@ if (typeof process !== 'undefined' && process.argv && process.argv[1]?.includes(
     process.exit(1);
   });
 }
+
+describe('Phase 2 Security Layer Automated Verification', () => {
+  it('executes the full cryptographic verification suite', async () => {
+    await runSecurityTestSuite();
+  });
+});
+

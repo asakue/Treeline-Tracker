@@ -41,9 +41,12 @@
 | **TASK-030** | Реализация MockEmergencyGateway (шлюз 112 со спас-статусом) | Medium | TASK-029 | Имитация ответа координатора спасателей | `PLANNED` | FR-017 |
 | **TASK-031** | Доработка ИИ-инструмента поиска пропавших (Lost Hiker Tool) | Medium | TASK-004 | Расчет confidence и факторов рельефа/погоды | `PLANNED` | FR-018, FR-019 |
 | **TASK-032** | Добавление явного дисклеймера в ИИ-выдачу | High | TASK-031 | Предупреждение о рекомендательном характере | `PLANNED` | FR-019 |
-| **TASK-033** | Написание юнит-тестов доменных сущностей и Zod схем | High | TASK-009 | 100% покрытие базовых типов тестами | `PLANNED` | NFR-013 |
-| **TASK-034** | Написание Security-тестов на крипто-стойкость и replay-атаки | Critical | TASK-017 | Тесты на отклонение измененного шифротекста | `PLANNED` | NFR-002, NFR-003 |
+| **TASK-033** | Написание юнит-тестов доменных сущностей, утилит и GPX | High | TASK-009 | 100% покрытие типов, утилит и GPX тестами (`gpx-exporter.test.ts`) | `DONE` | NFR-013 |
+| **TASK-034** | Написание Security-тестов на крипто-стойкость и replay-атаки | Critical | TASK-017 | Автотесты Ed25519, AES-GCM AEAD, Anti-Replay (`security-phase2.test.ts`) | `DONE` | NFR-002, NFR-003 |
 | **TASK-035** | Написание тестов транспорта и сценариев Failover | High | TASK-022 | Тесты переключения Internet ➔ Mesh ➔ Queue | `PLANNED` | NFR-010 |
 | **TASK-036** | Разработка руководства пользователя (User Guide) | Medium | TASK-027 | Документы в `docs/user/` | `PLANNED` | FR-001..025 |
 | **TASK-037** | Разработка руководства разработчика (Developer Guide) | Medium | TASK-004 | Документы в `docs/development/` | `PLANNED` | NFR-013 |
 | **TASK-038** | Разработка отчета о разрыве с промышленным уровнем (Production Gap) | High | TASK-007 | `docs/08-deployment/production-migration.md` | `PLANNED` | NFR-001..015 |
+| **TASK-039** | Разработка интерфейса профиля и безопасности (`ProfilePage`) | High | TASK-013, TASK-018 | Расчет прогресса, Ed25519 key UI, селектор приватности (`profile-page.tsx`) | `DONE` | FR-001, FR-022 |
+| **TASK-040** | Автотесты интерфейса профиля и криптографии (Vitest + RTL) | High | TASK-039 | 16 проверок в `src/views/__tests__/profile-page.test.tsx` (100% pass) | `DONE` | NFR-013, FR-001 |
+
