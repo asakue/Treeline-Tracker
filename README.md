@@ -1,88 +1,129 @@
+# Treeline Tracker 🌲🛰️
 
-# Treeline Tracker
+[![CI Pipeline](https://github.com/asakue/Treeline-Tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/asakue/Treeline-Tracker/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Next.js](https://img.shields.io/badge/Next.js-15.3-black)](https://nextjs.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-v11-orange)](https://firebase.google.com/)
+[![Genkit](https://img.shields.io/badge/Genkit-Gemini%202.5%20Flash-blue)](https://firebase.google.com/docs/genkit)
 
-Treeline Tracker is a modern, proof-of-concept web application designed for tracking and visualizing hiker group data in real-time. It provides a robust toolset for planning routes, monitoring group members, and ensuring safety during outdoor expeditions. The application is built with a focus on a scalable, feature-sliced architecture and a modern tech stack.
+**Treeline Tracker** — современная защищенная веб-платформа для координации туристических групп, мониторинга местоположения участников в реальном времени и содействия поисково-спасательным операциям (Search & Rescue / SAR) в условиях дикой природы и высокогорья.
 
-## 🚀 Key Features
+---
 
-*   **Real-time Hiker Tracking:** See live locations of group members on an interactive map.
-*   **Group & Route Management:** Create, edit, and delete hiking groups and detailed routes.
-*   **Interactive Map:** Visualize routes, hiker locations, and AI-suggested search areas.
-*   **AI-Powered Search & Rescue:** Utilizes Genkit to provide AI-driven suggestions for finding lost hikers based on known data.
-*   **Emergency Services:** A dedicated interface for critical situations, including sending location data and an emergency chat.
-*   **Weather Forecast:** View current and forecasted weather for the hiking area.
-*   **Responsive Design:** A seamless experience on both desktop and mobile devices.
+## 👥 Команда проекта (Core Team)
 
-## 📂 Project Structure (Feature-Sliced Design)
+* **Дмитрий** — Автор идеи (надежность и полевые требования к снаряжению и софту).
+* **Даниил** — Главный архитектор и ведущий разработчик (архитектура FSD, отказоустойчивость, безопасность).
+* **Илья** — Руководитель проекта (стратегия, продуктовое развитие и координация).
+* **Александр** — Разработчик (функциональные модули, картография и интеграции).
+* **Кирилл** — Разработчик (клиентские и серверные компоненты, оптимизация работы системы).
 
-The project follows a **Feature-Sliced Design (FSD)** methodology. This architecture organizes the codebase by business domain rather than technical purpose, making it highly scalable and maintainable.
+---
+
+## 🚀 Ключевые возможности (Key Features)
+
+* **📡 Real-time трекинг с гео-индексацией:** Синхронизация координат участников через слушатели `onSnapshot` Firestore и пространственный поиск на базе `geofire-common` (geohash 7–8) с адаптивным троттлингом (5–10 сек) и deadband-фильтрацией для экономии батареи.
+* **🛡️ Многоуровневая ролевая модель (RBAC):** Четкое разделение прав (`hiker` / турист, `guide` / гид-лидер, `rescuer` / оператор спасательной службы, `admin` / администратор) с принудительной проверкой в `firestore.rules`.
+* **🚨 Экстренный диспетчерский пункт и SOS-маяк:** Мгновенный сигнал бедствия с фиксацией координат, высоты и заряда батареи, выделенный канал связи со спасателями.
+* **🤖 Безопасный ИИ-поиск пропавших (SAR AI):** Построение вероятностных полигонов поиска с учетом рельефа и темпа движения через Genkit и Gemini 2.5 Flash с защитой от Prompt Injection, строгими Zod-схемами и аудиторским логом.
+* **🗺️ Интерактивная карта и профили высот:** Высокопроизводительная отрисовка треков на базе Leaflet с кластеризацией маркеров (`leaflet.markercluster`) и оптимизацией рендеринга.
+* **⚡ Offline-First устойчивость:** Персистентный кэш Firestore (`persistentLocalCache`) и локальный буфер в IndexedDB для работы в слепых зонах связи.
+* **🔀 Разрешение конфликтов (OCC):** Оптимистическая блокировка версий маршрутов при одновременном редактировании несколькими гидами.
+
+---
+
+## 📂 Архитектура проекта (Feature-Sliced Design)
+
+Проект построен строго по методологии **Feature-Sliced Design (FSD)** с изоляцией слоев:
 
 ```
 .
-├── public/
-│   └── ...            # Static assets (images, fonts, update.md)
+├── public/                 # Статические ассеты (иконки, карты)
 ├── src/
-│   ├── app/           # (Layer) Routing, global layouts, and API routes
-│   ├── views/         # (Layer) Complex pages or "widgets" composed of features and entities
-│   ├── features/      # (Layer) User-facing features (e.g., group-management, route-drawing)
-│   ├── entities/      # (Layer) Core business entities (e.g., Group, Route, Hiker)
-│   └── shared/        # (Layer) Reusable code, UI components, and libraries
-│       ├── api/       # Genkit flows and AI-related server actions
-│       ├── config/    # Global configurations (e.g., Firebase)
-│       ├── hooks/     # Shared React hooks
-│       ├── lib/       # Shared utility functions (utils, map-utils)
-│       └── ui/        # Shared, low-level UI components (from shadcn/ui)
-├── .env.local         # Local environment variables
+│   ├── app/                # [Layer] Next.js App Router, провайдеры и API-роуты (/api/*)
+│   ├── views/              # [Layer] Полностраничные композиции (страницы приложения)
+│   ├── widgets/            # [Layer] Композитные UI-блоки (навигация, сайдбары, картографический HUD)
+│   ├── features/           # [Layer] Пользовательские сценарии (sar-ai, route-drawing, group-management)
+│   ├── entities/           # [Layer] Бизнес-сущности и доменные вычисления (group, route, hiker, emergency)
+│   └── shared/             # [Layer] Переиспользуемый платформенный код без бизнес-логики
+│       ├── config/         # Конфигурация Firebase и окружения
+│       ├── hooks/          # Базовые хуки (use-debounce, use-geolocation)
+│       ├── lib/            # Утилиты (geohash, formatters, cn)
+│       └── ui/             # Атомарные компоненты (shadcn/ui, Radix)
+├── docs/                   # Инженерная спецификация, схемы и ADR
+├── .env.example            # Шаблон переменных окружения (без секретов)
+├── firestore.rules         # Декларативные правила безопасности базы данных
 ├── package.json
 └── README.md
 ```
 
-## 🛠️ Tech Stack
+---
 
-*   **[Next.js](https://nextjs.org/):** React framework for server-rendered and statically-generated web applications.
-*   **[React](https://reactjs.org/):** JavaScript library for building user interfaces.
-*   **[TypeScript](https://www.typescriptlang.org/):** Statically typed superset of JavaScript.
-*   **[Tailwind CSS](https://tailwindcss.com/):** A utility-first CSS framework for rapid UI development.
-*   **[Genkit](https://firebase.google.com/docs/genkit):** An open-source framework for building, deploying, and monitoring AI-powered features.
-*   **[shadcn/ui](https://ui.shadcn.com/):** Re-usable UI components built on Radix UI and Tailwind CSS.
-*   **[Leaflet](https://leafletjs.com/):** An open-source JavaScript library for interactive maps.
-*   **[Recharts](https://recharts.org/):** A composable charting library built on React components.
-*   **[Zod](https://zod.dev/):** TypeScript-first schema validation with static type inference.
-*   **[Firebase](https://firebase.google.com/):** Platform for building and managing web and mobile applications (used for backend services).
+## 🔒 Безопасность и управление секретами
 
-## ⚡️ Getting Started
+1. **Защита ключей:** Никаких секретов в репозитории. Файлы `.env` и `.env.local` внесены в `.gitignore`.
+2. **Управление секретами:** В production все приватные ключи (`GEMINI_API_KEY`, токены) хранятся в **Google Secret Manager** / **Firebase App Hosting Secrets** и доступны исключительно в server-side роутах (`/api/*`).
+3. **Pre-commit проверки:** Интеграция `trufflehog` / `git-secrets` для блокировки случайного коммита приватных ключей.
+4. **Валидация данных:** Все входящие координаты, идентификаторы и сообщения валидируются с помощью Zod на границе API.
+5. **Изоляция ИИ:** LLM не имеет прямого доступа к записи в базу данных; все рекомендации проходят валидацию и подтверждение оператором.
 
-1.  **Clone the repository:**
+---
 
-    ```bash
-    git clone https://github.com/asakue/Treeline-Tracker.git
-    cd Treeline-Tracker
-    ```
+## 🛠️ Технологический стек
 
-2.  **Install dependencies:**
+* **Frontend & Backend:** Next.js 15+ (App Router), React 18, TypeScript 5.
+* **Стилизация:** Tailwind CSS, Radix UI Primitives, Lucide Icons.
+* **Картография:** Leaflet, React-Leaflet, `geofire-common`.
+* **База данных и Auth:** Cloud Firestore, Firebase Authentication, Firebase Security Rules.
+* **Искусственный Интеллект:** Google Genkit, Gemini 2.5 Flash (`@google/genai`).
+* **Валидация:** Zod runtime schema validation.
+* **Тестирование:** Vitest, React Testing Library.
+* **CI/CD:** GitHub Actions (Lint, Typecheck, Test, Build, Firebase Deployment).
 
-    ```bash
-    npm install
-    ```
+---
 
-3.  **Set up environment variables:**
-    Create a `.env` file in the root of the project and add your Gemini API key:
-    ```
-    GEMINI_API_KEY=YOUR_API_KEY
-    ```
+## ⚡️ Быстрый старт (Getting Started)
 
-4.  **Run the development server:**
+### 1. Клонирование репозитория
+```bash
+git clone https://github.com/asakue/Treeline-Tracker.git
+cd Treeline-Tracker
+```
 
-    ```bash
-    npm run dev
-    ```
+### 2. Установка зависимостей
+```bash
+npm install
+```
 
-    Open [http://localhost:3000](http://localhost:3000) in your browser.
+### 3. Настройка переменных окружения
+Скопируйте шаблон `.env.example` в `.env.local` и укажите необходимые ключи:
+```bash
+cp .env.example .env.local
+```
 
-## 📜 Available Scripts
+### 4. Запуск сервера разработки
+```bash
+npm run dev
+```
+Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000).
 
-*   `npm run dev`: Starts the application in development mode with Turbopack.
-*   `npm run build`: Compiles the application for production.
-*   `npm run start`: Starts the production server.
-*   `npm run lint`: Runs the linter to check for code quality issues.
-*   `npm run typecheck`: Performs a TypeScript type check.
+---
+
+## 📜 Доступные npm-скрипты
+
+* `npm run dev` — Запуск локального сервера разработки.
+* `npm run build` — Компиляция production-сборки.
+* `npm run start` — Запуск скомпилированного сервера.
+* `npm run lint` — Статический анализ кода ESLint.
+* `npm run typecheck` — Проверка типов TypeScript без генерации файлов.
+* `npm run test` — Запуск модульных и интеграционных тестов (Vitest).
+
+---
+
+## 📚 Подробная документация (Documentation)
+
+* 📐 [Архитектурная спецификация и C4-диаграмма](./docs/architecture.md)
+* 🔐 [Модель угроз и безопасность](./docs/04-security/threat-model.md)
+* 👥 [Профиль команды и зона ответственности](./docs/01-product/team.md)
+* 📋 [Журнал изменений (CHANGELOG)](./CHANGELOG.md)
+* 🔍 [Аудит кодовой базы](./docs/00-audit/repository-audit.md)
