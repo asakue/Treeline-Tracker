@@ -112,9 +112,10 @@
 * **Стилизация:** Tailwind CSS, Radix UI Primitives, Lucide Icons.
 * **Картография:** Leaflet, React-Leaflet, `geofire-common`.
 * **База данных и Auth:** Cloud Firestore, Firebase Authentication, Firebase Security Rules (RBAC).
-* **Искусственный Интеллект:** Google Genkit, Gemini 2.5 Flash (`@google/genai`).
-* **Валидация:** Zod runtime validation.
-* **Безопасность:** TruffleHog, Git Hooks, Zod Schemas.
+* **Искусственный Интеллект (AI Subsystem):** **Google Genkit** (`genkit` + `@genkit-ai/google-genai`) с моделью Gemini 2.5 Flash / Gemini 1.5 Flash. Используется для оркестрации поисково-спасательного ИИ-агента (`suggestSearchAreasForLostHiker`), структурированного Zod-вывода и защищенных серверных флоу.
+* **Криптография и Безопасность:** W3C Web Crypto API (Ed25519, AES-256-GCM AEAD, SHA-256), TruffleHog scanner.
+* **Тестирование:** Vitest 4.x, React Testing Library, JSDOM.
+* **Валидация:** Zod runtime schema validation.
 
 ---
 
@@ -167,20 +168,21 @@ npm run dev
 
 ---
 
-## 📜 Доступные команды и скрипты
+## 📜 Доступные команды и скрипты (Available Scripts)
 
-| Команда (Bun) | Команда (npm) | Назначение |
+| Скрипт (npm / Bun) | Описание и назначение | Когда запускать |
 |---|---|---|
-| `bun run dev` | `npm run dev` | Запуск локального сервера разработки на порту 3000 |
-| `bun run build` | `npm run build` | Компиляция оптимизированной production-сборки |
-| `bun run start` | `npm run start` | Запуск собранного production-сервера |
-| `bun run lint` | `npm run lint` | Проверка кода линтером ESLint 9 |
-| `bun run typecheck` | `npm run typecheck` | Статическая проверка типов TypeScript (`tsc --noEmit`) |
-| `bun run test` | `npm run test` | Запуск автоматизированных тестов Vitest и React Testing Library |
-| `bun run test:watch` | `npm run test:watch` | Интерактивный запуск тестов Vitest в режиме отслеживания |
-| `bun run security:scan` | `npm run security:scan` | Ручной запуск сканера секретов и опасных файлов |
-| `bun run hooks:install` | `npm run hooks:install` | Привязка pre-commit хуков с TruffleHog к Git |
-| `bun run analyze` | `npm run analyze` | Анализ размера клиентского бандла через bundle-analyzer |
+| `npm run dev` | Запуск локального сервера разработки на порту 3000 (Next.js Turbo/HMR). | Во время активной разработки интерфейса и API. |
+| `npm run test` | Запуск полного набора автоматических тестов (Vitest + RTL + Crypto suite). | **Обязательно перед созданием PR и коммитом.** |
+| `npm run test:watch` | Запуск Vitest в интерактивном watch-режиме с мгновенным перезапуском при изменениях. | При разработке новых тестов и TDD. |
+| `npm run typecheck` | Строгая проверка типов TypeScript (`tsc --noEmit`). | Перед каждым коммитом и в CI конвейере. |
+| `npm run lint` | Проверка кода линтером ESLint 9 на соответствие кодстайлу. | Перед коммитом и в CI пайплайне. |
+| `npm run security:scan` | Запуск `scripts/secret-scan.mjs` и сканера TruffleHog на утечки ключей и `.env`. | **Обязательно перед деплоем и публикацией релизов.** |
+| `npm run analyze` | Запуск production-сборки с анализатором размера бандла (`@next/bundle-analyzer`). | При оптимизации размера клиентских бандлов перед релизом. |
+| `npm run build` | Компиляция оптимизированной production-сборки приложения (Next.js standalone). | При подготовке к деплою в Cloud Run / App Hosting. |
+| `npm run start` | Запуск скомпилированного production-сервера. | На сервере или в Docker-контейнере в проде. |
+| `npm run genkit:dev` | Запуск локальной панели инструментов Genkit Developer UI (`src/ai/dev.ts`). | При тестировании и отладке промптов/флоу ИИ. |
+
 
 ---
 

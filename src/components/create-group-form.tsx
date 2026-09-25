@@ -1,1 +1,2 @@
-export { default } from '@/features/group-creation/ui/create-group-form';
+export { default } from '@/features/group-management/ui/create-group-form';
+

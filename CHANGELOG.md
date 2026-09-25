@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.1] - 2026-09-25
+
+### Fixed
+- **Dependency & Build Configuration Sync**:
+  - Corrected `vitest` dependency version range in `package.json` to stable 4.x (`^4.1.9`).
+  - Synchronized `eslint-config-next` to `15.3.8` and `eslint` to `^9.20.0` to match Next.js 15.3.8.
+  - Removed `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds` suppression masks from `next.config.ts` (`ignoreBuildErrors: false`, `ignoreDuringBuilds: false`).
+  - Resolved all underlying TypeScript type errors across `crypto-service.ts` (BufferSource typing), `map-route-drawer.tsx` (Leaflet MapOptions & events), `location-tracker.tsx` (async group submission), `use-routes.ts`, and domain entity models (`Group`, `Member`, `Route`, `AppUserProfile`).
+- **AI Stack Clarification & Dependency Hygiene**:
+  - Removed unused legacy `@google/generative-ai` SDK dependency from `package.json`.
+  - Clarified and documented **Google Genkit** (`genkit` + `@genkit-ai/google-genai`) as the unified AI framework powering SAR search area flows.
+- **Repository Cleanliness & Documentation**:
+  - Ensured `.idx/` and `.modified` are untracked and excluded in `.gitignore`.
+  - Recreated standard non-sensitive `.env.example` template.
+  - Expanded `README.md` available scripts documentation with detailed explanations for `test`, `test:watch`, `analyze`, `security:scan`, `typecheck`, and `lint`.
+
+---
+
 ## [0.4.0] - 2026-09-24
 
 ### Added

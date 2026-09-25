@@ -153,7 +153,7 @@ export async function runSecurityTestSuite() {
   replayEngine.recordPacket(dummyPacket);
 
   const checkReplay = replayEngine.validatePacket(dummyPacket);
-  assert(checkReplay.valid === false && checkReplay.reason?.includes('Replay detected'), 'Replayed packetId is rejected');
+  assert(checkReplay.valid === false && Boolean(checkReplay.reason?.includes('Replay detected')), 'Replayed packetId is rejected');
 
   // Sequence regression test
   const regressedSeqPacket: SecurePacket = {
@@ -162,7 +162,7 @@ export async function runSecurityTestSuite() {
     sequenceNumber: 1, // Same or lower than recorded sequence 1
   };
   const checkRegression = replayEngine.validatePacket(regressedSeqPacket);
-  assert(checkRegression.valid === false && checkRegression.reason?.includes('Sequence regression'), 'Sequence number regression rejected');
+  assert(checkRegression.valid === false && Boolean(checkRegression.reason?.includes('Sequence regression')), 'Sequence number regression rejected');
 
   // Freshness expiration test (>10 min)
   const expiredPacket: SecurePacket = {
@@ -172,7 +172,7 @@ export async function runSecurityTestSuite() {
     sequenceNumber: 2,
   };
   const checkExpired = replayEngine.validatePacket(expiredPacket);
-  assert(checkExpired.valid === false && checkExpired.reason?.includes('expired'), 'Packet older than 10 minutes rejected');
+  assert(checkExpired.valid === false && Boolean(checkExpired.reason?.includes('expired')), 'Packet older than 10 minutes rejected');
 
   // Clock skew test (>1 min in future)
   const futurePacket: SecurePacket = {
@@ -182,7 +182,7 @@ export async function runSecurityTestSuite() {
     sequenceNumber: 2,
   };
   const checkFuture = replayEngine.validatePacket(futurePacket);
-  assert(checkFuture.valid === false && checkFuture.reason?.includes('future'), 'Packet from the future rejected');
+  assert(checkFuture.valid === false && Boolean(checkFuture.reason?.includes('future')), 'Packet from the future rejected');
 
   // --- SUITE 5: Identity Manager & Fingerprinting ---
   console.log('\n--- Suite 5: Identity Manager & Fingerprinting ---');

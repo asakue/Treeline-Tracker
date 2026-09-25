@@ -69,7 +69,7 @@ export class CryptoService {
     const privateKeyBuffer = base64ToBuffer(privateKeyBase64);
     const privateKey = await crypto.subtle.importKey(
       'pkcs8',
-      privateKeyBuffer,
+      privateKeyBuffer as BufferSource,
       {
         name: 'Ed25519',
       },
@@ -85,7 +85,7 @@ export class CryptoService {
         name: 'Ed25519',
       },
       privateKey,
-      payloadBytes
+      payloadBytes as BufferSource
     );
 
     return bufferToBase64(signature);
@@ -105,7 +105,7 @@ export class CryptoService {
 
       const publicKey = await crypto.subtle.importKey(
         'raw',
-        publicKeyBuffer,
+        publicKeyBuffer as BufferSource,
         {
           name: 'Ed25519',
         },
@@ -121,8 +121,8 @@ export class CryptoService {
           name: 'Ed25519',
         },
         publicKey,
-        signatureBuffer,
-        payloadBytes
+        signatureBuffer as BufferSource,
+        payloadBytes as BufferSource
       );
     } catch {
       return false;
@@ -154,7 +154,7 @@ export class CryptoService {
     const keyBuffer = base64ToBuffer(keyBase64);
     const key = await crypto.subtle.importKey(
       'raw',
-      keyBuffer,
+      keyBuffer as BufferSource,
       {
         name: 'AES-GCM',
       },
@@ -175,7 +175,7 @@ export class CryptoService {
         tagLength: 128,
       },
       key,
-      encodedData
+      encodedData as BufferSource
     );
 
     const encryptedBytes = new Uint8Array(encryptedWithTag);
@@ -202,7 +202,7 @@ export class CryptoService {
     const keyBuffer = base64ToBuffer(keyBase64);
     const key = await crypto.subtle.importKey(
       'raw',
-      keyBuffer,
+      keyBuffer as BufferSource,
       {
         name: 'AES-GCM',
       },
@@ -222,11 +222,11 @@ export class CryptoService {
     const decrypted = await crypto.subtle.decrypt(
       {
         name: 'AES-GCM',
-        iv,
+        iv: iv as BufferSource,
         tagLength: 128,
       },
       key,
-      combined
+      combined as BufferSource
     );
 
     const decoder = new TextDecoder();
@@ -239,7 +239,7 @@ export class CryptoService {
   static async sha256Hex(data: string | Uint8Array): Promise<string> {
     const encoder = new TextEncoder();
     const bytes = typeof data === 'string' ? encoder.encode(data) : data;
-    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', bytes as BufferSource);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
   }

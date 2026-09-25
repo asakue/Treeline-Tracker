@@ -1,13 +1,8 @@
-export type Hiker = {
-  id: string;
-  name: string;
-  avatar: string;
-  status: 'На тропе' | 'На воде' | 'В лагере';
-  battery: number;
-  coords: string;
-  lastUpdate: string;
-  lastUpdateTimestamp?: number; // Add this to store the raw timestamp
-  privacyMode?: 'NORMAL' | 'REDUCED' | 'STEALTH';
+import type { Member, MemberStatus, LocationUpdate, PrivacyMode } from '@/core/domain/types';
+
+export type Hiker = Member & {
+  privacyMode?: PrivacyMode;
   isVerified?: boolean;
   keyFingerprint?: string;
 };
+

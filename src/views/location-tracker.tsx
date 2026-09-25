@@ -106,12 +106,14 @@ export default function LocationTracker() {
     return 'text-red-500';
   }
 
-  const handleGroupSubmit = (groupData: Omit<Group, 'id'>, id?: string) => {
+  const handleGroupSubmit = async (groupData: Omit<Group, 'id'>, id?: string) => {
     if (id) {
-        updateGroup(id, groupData);
+        await updateGroup(id, groupData);
     } else {
-        const createdGroup = addGroup(groupData);
-        handleSetSelectedGroup(createdGroup.id);
+        const createdGroup = await addGroup(groupData);
+        if (createdGroup && createdGroup.id) {
+          handleSetSelectedGroup(createdGroup.id);
+        }
     }
     setFormOpen(false);
     setGroupToEdit(undefined);

@@ -159,7 +159,6 @@ export default function MapRouteDrawer() {
       const mapInstance = L.map(mapContainerRef.current, {
         attributionControl: true,
         zoomControl: false,
-        cursor: true,
       }).setView([43.26, 42.5], 11);
 
       const initialLayer = createTileLayer('opentopomap');
@@ -326,7 +325,9 @@ export default function MapRouteDrawer() {
     };
 
     const handleContextMenu = (e: L.LeafletMouseEvent) => {
-      L.DomEvent.preventDefault(e);
+      if (e.originalEvent) {
+        L.DomEvent.preventDefault(e.originalEvent);
+      }
       if (drawingRoutePoints.length > 0) {
         const nextPoints = drawingRoutePoints.slice(0, -1);
         setDrawingRoutePoints(nextPoints);

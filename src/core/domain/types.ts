@@ -43,6 +43,9 @@ export interface Member {
   lastUpdate: string; // Human readable (e.g. "2 минуты назад")
   lastUpdateTimestamp: number; // Unix epoch ms
   publicKey?: string; // Ed25519 public key hex string
+  isVerified?: boolean;
+  keyFingerprint?: string;
+  privacyMode?: PrivacyMode;
 }
 
 export interface Group {

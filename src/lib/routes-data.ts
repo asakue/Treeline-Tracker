@@ -1,16 +1,9 @@
 
-export const savedRoutes: {
-  id: string;
-  name: string;
-  location: string;
-  difficulty: 'Легко' | 'Средне' | 'Сложно' | 'Очень сложно';
-  distance: string;
-  time: string;
-  type: string;
-  altitude: string;
-  coordinates: string;
-  path: [number, number][];
-}[] = [
+import type { Route } from '@/core/domain/types';
+
+export type { Route };
+
+export const savedRoutes: Route[] = [
   {
     id: '1',
     name: 'Восхождение на Эльбрус (Западная вершина)',

@@ -1,15 +1,9 @@
+import type { Group as DomainGroup, Member } from '@/core/domain/types';
 import type { Hiker } from '@/entities/hiker';
-import type { Route } from '@/entities/route';
 
-export type Group = {
-  id: string;
-  name: string;
-  location: string;
-  distance: string;
-  difficulty: 'Легко' | 'Средне' | 'Сложно' | 'Очень сложно';
-  hikers: Hiker[];
-  routeId?: string;
-};
+export type Group = DomainGroup;
+export type { Hiker };
+
 
 // Initialized empty for dynamic user-created hikers and groups
 export const availableHikers: Hiker[] = [];
