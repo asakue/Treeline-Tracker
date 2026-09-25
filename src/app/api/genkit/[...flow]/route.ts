@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { suggestSearchAreasFlow } from '@/ai/flows/suggest-search-areas-for-lost-hiker';
 
 export async function GET() {
-  return NextResponse.json({ status: 'active', flow: 'suggestSearchAreasFlow' });
+  return NextResponse.json({ status: 'active', service: 'Gemini AI API' });
 }
 
 export async function POST(req: NextRequest) {
   try {
+    const url = new URL('/api/search-areas', req.url);
     const body = await req.json();
-    const result = await suggestSearchAreasFlow(body);
-    return NextResponse.json({ success: true, data: result });
+    const res = await fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
     return NextResponse.json(
       { success: false, error: (error as Error).message },
@@ -17,4 +22,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

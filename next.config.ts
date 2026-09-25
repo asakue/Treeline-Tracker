@@ -1,13 +1,6 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'standalone',
-  serverExternalPackages: [
-    'genkit',
-    '@genkit-ai/google-genai',
-    '@genkit-ai/core',
-    '@opentelemetry/sdk-node',
-    '@opentelemetry/instrumentation',
-  ],
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: false,
   },
@@ -27,4 +20,3 @@ const nextConfig = {
 };
 
 export default nextConfig;
-
