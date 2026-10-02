@@ -11,26 +11,29 @@
 
 ```mermaid
 graph TD
-    User([👤 Пользователь]) --> AuthChoice{Выбор сценария входа}
+    User(["👤 Пользователь"]) --> AuthChoice{"Выбор сценария входа"}
 
-    subgraph Online_Layer [1. Облачный контур (Firebase Auth & OAuth)]
-        AuthChoice -->|Email / Password| EmailAuth[Email + Password]
-        AuthChoice -->|OAuth 2.0| GoogleAuth[Вход через Google]
-        AuthChoice -->|Быстрый старт| AnonAuth[Анонимный гостевой вход]
-        AuthChoice -->|Спасатели / Администраторы| MFAAuth[MFA TOTP / SMS 2FA]
+    subgraph Online_Layer ["1. Облачный контур (Firebase Auth и OAuth)"]
+        AuthChoice -->|"Email / Password"| EmailAuth["Email + Password"]
+        AuthChoice -->|"OAuth 2.0"| GoogleAuth["Вход через Google"]
+        AuthChoice -->|"Быстрый старт"| AnonAuth["Анонимный гостевой вход"]
+        AuthChoice -->|"Спасатели / Администраторы"| MFAAuth["MFA TOTP / SMS 2FA"]
         
-        EmailAuth & GoogleAuth & AnonAuth & MFAAuth --> JWTIssuer[Генерация JWT с Custom Claims]
-        JWTIssuer --> RBACGuard[RBAC Guard: hiker, guide, rescuer, admin]
+        EmailAuth --> JWTIssuer["Генерация JWT с Custom Claims"]
+        GoogleAuth --> JWTIssuer
+        AnonAuth --> JWTIssuer
+        MFAAuth --> JWTIssuer
+        JWTIssuer --> RBACGuard["RBAC Guard (hiker, guide, rescuer, admin)"]
     end
 
-    subgraph Offline_Crypto_Layer [2. Оффлайн-контур (Zero-Knowledge Web Crypto)]
-        AuthChoice -->|Автономный режим в горах| LocalKeyGen[Генерация ключевой пары Ed25519]
-        LocalKeyGen --> LocalVault[Защищенное хранилище IndexedDB / Web Crypto]
-        LocalVault --> GroupAuth[Авторизация в группе по QR-коду / GroupPasscode]
-        GroupAuth --> MeshSign[Локальная цифровая подпись пакетов в радиоэфире]
+    subgraph Offline_Crypto_Layer ["2. Оффлайн-контур (Zero-Knowledge Web Crypto)"]
+        AuthChoice -->|"Автономный режим в горах"| LocalKeyGen["Генерация ключевой пары Ed25519"]
+        LocalKeyGen --> LocalVault["Защищенное хранилище IndexedDB / Web Crypto"]
+        LocalVault --> GroupAuth["Авторизация в группе по QR / Passcode"]
+        GroupAuth --> MeshSign["Локальная цифровая подпись пакетов в эфире"]
     end
 
-    RBACGuard --> AccountLinker[Бесшовная связка: Offline Crypto Profile ⟷ Cloud Account]
+    RBACGuard --> AccountLinker["Связка: Offline Crypto Profile ⟷ Cloud Account"]
     MeshSign --> AccountLinker
 ```
 
@@ -80,16 +83,16 @@ export interface HikerProfileData {
 
 ---
 
-## 3. Ролевая модель доступа (Role-Based Access Control / RBAC)
+## 3. Матрица разграничения доступа (Role-Based Access Control Matrix)
 
 Система реализует четыре иерархических уровня привилегий с валидацией как на клиенте (UI Guard), так и на уровне базы данных (`firestore.rules`):
 
-| Роль | Назначение | Требования к аутентификации | Права доступа в рамках системы |
-| :--- | :--- | :--- | :--- |
-| **`hiker`** (Турист) | Обычный участник похода | Email/Password, Google OAuth или Анонимный гостевой вход | Передача собственной GPS-телеметрии, просмотр маршрута и состава своей группы, отправка сообщений в чат и экстренный сигнал SOS. Доступ к чужим группам строго заблокирован. |
-| **`guide`** (Гид / Инструктор) | Руководитель группы | Верифицированный Email + проверка квалификации гида | Создание и управление группами, редактирование маршрутов и контрольных точек (с контролем версий OCC), мониторинг удаления участников от центра группы (Geofencing), управление кодами доступа. |
-| **`rescuer`** (Спасатель МЧС / SAR) | Оператор поисково-спасательного центра | Корпоративный аккаунт + Обязательная двухфакторная аутентификация (MFA) | Просмотр всех активных групп в доверенном территориальном секторе, прием экстренных SOS-сигналов, запуск ИИ-модели Gemini 3.8 Flash для генерации секторов поиска, координация эвакуации. |
-| **`admin`** (Администратор) | Системный контроль платформы | Аппаратный ключ / MFA + белый список IP | Управление ролями пользователей и Custom Claims, аудит журналов безопасности, контроль лимитов внешних API, управление системными параметрами. |
+| Роль в системе | Основное назначение | Требования к аутентификации | Разрешенные операции | Запрещенные операции |
+|---|---|---|---|---|
+| **`hiker`** (Турист) | Участник похода | Email/Password, Google OAuth или Анонимный вход | Запись своей GPS-телеметрии, чтение маршрута и участников своей группы, отправка SOS и чат | Доступ к чужим группам, изменение чужих треков, просмотр закрытых координат спасателей |
+| **`guide`** (Гид / Руководитель) | Руководитель группы | Верифицированный Email + проверка квалификации | Создание и управление группами, редактирование маршрутов (OCC), мониторинг геозон (Geofencing) | Доступ к служебным каналам МЧС вне своей экспедиции, изменение системных ролей |
+| **`rescuer`** (Спасатель МЧС) | Оператор спасательного центра | Корпоративный аккаунт + Обязательная MFA (TOTP/SMS) | Просмотр всех активных групп в секторе, прием SOS, запуск Gemini AI генерации зон поиска | Изменение маршрутов туристических групп без запроса бедствия |
+| **`admin`** (Администратор) | Системный контроль платформы | Аппаратный ключ / MFA + белый список IP | Управление ролями, аудит логов безопасности, мониторинг метрик, управление квотами API | Несанкционированная подмена пользовательских подписей Ed25519 |
 
 ---
 

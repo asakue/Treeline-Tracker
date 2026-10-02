@@ -9,36 +9,46 @@
 
 ```mermaid
 graph TD
-    User([👤 Пользователь / Турист])
-    Leader([🧭 Руководитель группы])
-    SAR([🚨 Спасатель / Базовый лагерь])
+    User(["👤 Пользователь / Турист"])
+    Leader(["🧭 Руководитель группы"])
+    SAR(["🚨 Спасатель / Базовый лагерь"])
 
-    subgraph Treeline [Система Treeline Tracker]
-        App[Веб / Мобильный клиент Next.js]
-        Engine[Core Domain & Security Engine]
-        RepoLayer[Repository & Local Storage Layer]
+    subgraph Treeline ["Система Treeline Tracker"]
+        App["Веб / Мобильный клиент Next.js"]
+        Engine["Core Domain & Security Engine"]
+        RepoLayer["Repository & Local Storage Layer"]
     end
 
-    Cloud[(Облачный бэкенд / Firebase Firestore)]
-    MeshNode[(Симулированный узел MeshCore LoRa)]
-    MockGateway[Симулированный шлюз спасателей 112]
-    GeminiAI[Google Gemini 3.8 Flash AI Model]
-    BRouterEngine[BRouter Hiking Routing Service]
-    DEMService[Open-Elevation DEM Service]
+    Cloud[("Облачный бэкенд / Firebase Firestore")]
+    MeshNode[("Симулированный узел MeshCore LoRa")]
+    MockGateway["Симулированный шлюз спасателей 112"]
+    GeminiAI["Google Gemini 3.8 Flash AI Model"]
+    BRouterEngine["BRouter Hiking Routing Service"]
+    DEMService["Open-Elevation DEM Service"]
 
-    User <-->|Интерактивный UI| App
-    Leader <-->|Управление группой и маршрутами| App
-    SAR <-->|Координация поиска| App
+    User -->|"Интерактивный UI"| App
+    App -->|"Отображение карты и статусов"| User
+    Leader -->|"Управление группой и маршрутами"| App
+    App -->|"Телеметрия отряда"| Leader
+    SAR -->|"Координация поиска"| App
+    App -->|"Сводка инцидентов"| SAR
 
-    App <--> Engine
-    Engine <--> RepoLayer
+    App --> Engine
+    Engine --> App
+    Engine --> RepoLayer
+    RepoLayer --> Engine
 
-    RepoLayer <-->|Синхронизация| Cloud
-    Engine <-->|LoRa радиоэфир (симуляция)| MeshNode
-    Engine -->|SOS оповещение| MockGateway
-    Engine <-->|Анализ секторов поиска| GeminiAI
-    Engine <-->|Построение пешеходных треков| BRouterEngine
-    Engine <-->|Высотный профиль SRTM| DEMService
+    RepoLayer -->|"Синхронизация"| Cloud
+    Cloud -->|"Реактивные обновления"| RepoLayer
+    Engine -->|"LoRa радиоэфир (симуляция)"| MeshNode
+    MeshNode -->|"Прием пакетов"| Engine
+    Engine -->|"SOS оповещение"| MockGateway
+    Engine -->|"Анализ секторов поиска"| GeminiAI
+    GeminiAI -->|"Полигон вероятной зоны"| Engine
+    Engine -->|"Построение пешеходных треков"| BRouterEngine
+    BRouterEngine -->|"Геометрия троп"| Engine
+    Engine -->|"Высотный профиль SRTM"| DEMService
+    DEMService -->|"Массив высот"| Engine
 ```
 
 ---
@@ -319,10 +329,10 @@ stateDiagram-v2
         GeofenceCheck --> Tracking: В пределах радиуса
     }
 
-    ACTIVE_NORMAL --> WARNING_OUT_OF_BOUNDS: Дистанция > safeRadiusMeters
+    ACTIVE_NORMAL --> WARNING_OUT_OF_BOUNDS: Дистанция превышает безопасный радиус
     WARNING_OUT_OF_BOUNDS --> ACTIVE_NORMAL: Возврат в геозону
     
-    ACTIVE_NORMAL --> SOS_EMERGENCY: Нажатие кнопки SOS / Травма
+    ACTIVE_NORMAL --> SOS_EMERGENCY: Нажатие кнопки SOS или травма
     WARNING_OUT_OF_BOUNDS --> SOS_EMERGENCY: Сигнал SOS вне зоны
     
     state SOS_EMERGENCY {
