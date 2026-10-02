@@ -1,193 +1,335 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card';
-import { Zap, Target, Smile, Mountain, Activity, HardHat, Building, ChevronDown, CheckCircle, Code } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/ui/card';
+import {
+  Zap,
+  Target,
+  Smile,
+  Mountain,
+  Activity,
+  HardHat,
+  Building2,
+  ChevronDown,
+  CheckCircle2,
+  Shield,
+  Radio,
+  Users,
+  Compass,
+  Sparkles,
+  Lock,
+  HeartHandshake,
+  MapPin,
+  Cpu,
+} from 'lucide-react';
+import { Badge } from '@/shared/ui/badge';
+import { Button } from '@/shared/ui/button';
 
 const principles = [
-    {
-        id: "principle-automation",
-        icon: <Zap className="size-8 text-primary" />,
-        title: "Принцип Автоматики",
-        description: "Система работает сама. Задайте безопасный радиус, и если кто-то его покинет — у него и у руководителя группы раздастся сигнал. Система бдит, пока вы наслаждаетесь походом.",
-    },
-    {
-        id: "principle-accuracy",
-        icon: <Target className="size-8 text-primary" />,
-        title: "Принцип Точности",
-        description: "В случае ЧС достаточно одного нажатия на кнопку SOS. Точные GPS-координаты пострадавшего мгновенно отправляются на карты всех участников группы.",
-    },
-    {
-        id: "principle-calmness",
-        icon: <Smile className="size-8 text-primary" />,
-        title: "Принцип Спокойствия",
-        description: "Новички перестают панически бояться отстать и могут наслаждаться природой. Гиды получают цифрового помощника, который многократно повышает безопасность группы.",
-    }
-]
+  {
+    id: 'principle-automation',
+    icon: Zap,
+    title: 'Принцип Автоматики',
+    badge: 'Geofencing',
+    description: 'Система работает автономно. Задайте безопасный радиус геозоны — если участник отстанет или отклонится, тревожный сигнал немедленно уведомит и его, и руководителя.',
+  },
+  {
+    id: 'principle-accuracy',
+    icon: Target,
+    title: 'Принцип Точности',
+    badge: 'GNSS & DEM',
+    description: 'В экстренной ситуации достаточно одного действия: точные координаты, высотная отметка и заряд аккумулятора мгновенно передаются на карты всех членов группы.',
+  },
+  {
+    id: 'principle-privacy',
+    icon: Lock,
+    title: 'Принцип Приватности',
+    badge: 'Zero-Knowledge E2EE',
+    description: 'Координаты принадлежат только вам. Сквозное шифрование AES-256-GCM и подписи Ed25519 гарантируют защиту геоданных от перехвата и подделки.',
+  },
+  {
+    id: 'principle-calmness',
+    icon: Smile,
+    title: 'Принцип Уверенности',
+    badge: 'Safety First',
+    description: 'Новички избавляются от страха потеряться и получают удовольствие от природы. Гиды и руководители получают надежного цифрового ассистента.',
+  },
+];
 
 const perspectives = [
-    { id: "perspective-resorts", icon: Mountain, title: "Горнолыжные курорты", description: "Контроль групп фрирайдеров в лавиноопасных зонах." },
-    { id: "perspective-rescue", icon: Activity, title: "Поисковые отряды", description: "Передача SOS-сигнала напрямую в диспетчерскую службу спасателей." },
-    { id: "perspective-industry", icon: HardHat, title: "Промышленность", description: "Мониторинг персонала на удалённых стройках, карьерах и вышках." },
-    { id: "perspective-agriculture", icon: Building, title: "Сельское хозяйство", description: "Учёт и координация работы на огромных территориях." },
+  {
+    id: 'perspective-resorts',
+    icon: Mountain,
+    title: 'Горнолыжные курорты',
+    description: 'Контроль групп фрирайдеров и мониторинг безопасных трасс в лавиноопасных секторах.',
+  },
+  {
+    id: 'perspective-rescue',
+    icon: Activity,
+    title: 'Поисковые отряды (SAR / МЧС)',
+    description: 'Координация поисково-спасательных операций с ИИ-генерацией вероятных секторов нахождения.',
+  },
+  {
+    id: 'perspective-industry',
+    icon: HardHat,
+    title: 'Промышленный мониторинг',
+    description: 'Безопасность геологоразведочных партий, персонала на карьерах и удаленных объектах.',
+  },
+  {
+    id: 'perspective-agriculture',
+    icon: Building2,
+    title: 'Лесничества и заповедники',
+    description: 'Организация патрулирования национальных парков и мониторинг туристических троп.',
+  },
 ];
 
 const teamMembers = [
-    {
-        id: "member-dmitry",
-        name: "Дмитрий",
-        role: "Автор идеи",
-        description: "Отвечает за надежность и простоту технологии в полевых условиях.",
-    },
-    {
-        id: "member-daniil",
-        name: "Даниил",
-        role: "Главный архитектор и разработчик",
-        description: "Превращает идеи в работающий код и надёжную архитектуру.",
-    },
-    {
-        id: "member-ilya",
-        name: "Илья",
-        role: "Руководитель проекта",
-        description: "Отвечает за стратегию, продвижение и связь с пользователями.",
-    },
-    {
-        id: "member-alexander",
-        name: "Александр",
-        role: "Разработчик",
-        description: "Разработка функциональных модулей и развитие возможностей платформы.",
-    },
-    {
-        id: "member-kirill",
-        name: "Кирилл",
-        role: "Разработчик",
-        description: "Разработка клиентских и серверных компонентов, оптимизация работы системы.",
-    },
+  {
+    id: 'member-dmitry',
+    name: 'Дмитрий',
+    role: 'Автор идеи и полевой эксперт',
+    badge: 'Vision & Safety',
+    initials: 'ДМ',
+    skills: ['Полевая безопасность', 'Концепция продукта', 'Тестирование в горах'],
+    description: 'Инициатор проекта и эксперт по горным походам. Отвечает за проверку надежности технологий в реальных суровых условиях дикой природы.',
+  },
+  {
+    id: 'member-daniil',
+    name: 'Даниил',
+    role: 'Главный архитектор и ведущий разработчик',
+    badge: 'Lead Architect',
+    initials: 'ДН',
+    skills: ['FSD / Clean Architecture', 'Web Crypto E2EE', 'Gemini AI API', 'Next.js 15'],
+    description: 'Спроектировал модульную архитектуру системы, криптографический контур E2EE, интеграцию с Google Gemini AI и отказоустойчивые репозитории.',
+  },
+  {
+    id: 'member-ilya',
+    name: 'Илья',
+    role: 'Руководитель проекта',
+    badge: 'Project Lead',
+    initials: 'ИЛ',
+    skills: ['Управление бэклогом', 'Стратегия развития', 'Связь с МЧС и сообществами'],
+    description: 'Отвечает за стратегию проекта, координацию этапов разработки, взаимодействие со спасательными службами и туроператорами.',
+  },
+  {
+    id: 'member-alexander',
+    name: 'Александр',
+    role: 'Разработчик картографии и рельефа',
+    badge: 'Core Developer',
+    initials: 'АЛ',
+    skills: ['Leaflet & React-Leaflet', 'OpenTopoMap / CyclOSM', 'SRTM DEM Модель'],
+    description: 'Разработал интерактивный модуль маршрутизации, интеграцию слоев рельефа OpenStreetMap и алгоритмы расчета набора/сброса высот.',
+  },
+  {
+    id: 'member-kirill',
+    name: 'Кирилл',
+    role: 'Разработчик клиентских систем и UI',
+    badge: 'Core Developer',
+    initials: 'КР',
+    skills: ['Оптимизация производительности', 'Geohashing', 'Адаптивный UI/UX'],
+    description: 'Разработка отзывчивых интерфейсов, фильтрация пространственных гео-запросов и оптимизация энергопотребления в фоновом режиме.',
+  },
 ];
 
 export default function AboutUs() {
   return (
-    <div className="bg-background text-foreground animate-fade-in-slow">
-      <header className="relative flex flex-col items-center justify-center h-[60vh] md:h-[70vh] text-center p-4 overflow-hidden">
-         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-background to-background -z-10 animate-gradient-move bg-size-200" />
-        <div className="absolute inset-0 bg-background/50 dark:bg-black/50 backdrop-blur-sm z-0" />
-        <div className="relative z-10 animate-fade-in-up">
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-b from-foreground to-foreground/70 dark:from-white dark:to-neutral-300">
-                Проект "Дозор"
-            </h1>
-            <p className="mt-4 text-lg md:text-xl max-w-3xl text-muted-foreground dark:text-neutral-200">
-               Меняем правила игры: не искать, а предотвращать. <br/> Не реагировать на кризис, а не допускать его.
-            </p>
-            <a href="#problem-section" className="mt-8 inline-block animate-bounce">
-                <ChevronDown className="size-10 text-muted-foreground/70 dark:text-white/70" />
-            </a>
+    <div className="bg-background text-foreground animate-fade-in-slow pb-16">
+      
+      {/* Hero Section */}
+      <header className="relative flex flex-col items-center justify-center min-h-[50vh] md:min-h-[60vh] text-center p-6 overflow-hidden border-b border-border/40">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-background/60 to-background -z-10" />
+        <div className="relative z-10 max-w-4xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider">
+            <HeartHandshake className="size-3.5" />
+            Команда Treeline Tracker
+          </div>
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-foreground via-foreground/90 to-muted-foreground">
+            Проект «Дозор»
+          </h1>
+          <p className="text-lg md:text-2xl font-medium text-primary">
+            Не искать, а предотвращать. Не реагировать на кризис, а не допускать его.
+          </p>
+          <p className="max-w-2xl mx-auto text-sm md:text-base text-muted-foreground leading-relaxed">
+            Мы создаем интеллектуальную экосистему безопасности для походов любой сложности, объединяя децентрализованную криптографию, спутниковую картографию и искусственный интеллект.
+          </p>
         </div>
       </header>
-      
-      <main className="max-w-5xl mx-auto px-4 py-16 sm:px-6 lg:px-8 space-y-24">
-        <section id="problem-section" className="scroll-mt-20">
-            <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Корень проблемы — <span className="text-primary">информационный вакуум</span></h2>
-                <p className="max-w-3xl mx-auto text-lg text-muted-foreground mt-4">
-                   Представьте: поход, вы на секунду остановились, а через десять минут понимаете — вы одни. Без связи. В тишине. Начинается паника. Поиски в такой ситуации ведутся вслепую, от точки, где человека видели в последний раз. Это поиск иголки в стоге сена, где каждый час на вес золота.
+
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 space-y-20">
+        
+        {/* Problem Section with Visual Metrics */}
+        <section id="problem-section" className="space-y-8">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
+              Корень проблемы — <span className="text-primary">информационный вакуум</span>
+            </h2>
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
+              В дикой природе сотовая связь исчезает за первым же перевалом. Достаточно на минуту остановиться поправить рюкзак — и группа уходит вперед. В условиях отсутствия ориентиров начинается паника, а поисковые операции стартуют вслепую.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-card/50 backdrop-blur-sm border-primary/20 shadow-sm text-center">
+              <CardContent className="pt-6">
+                <p className="text-4xl md:text-5xl font-extrabold text-primary font-mono">85%</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">
+                  туристов хотя бы раз теряли визуальный контакт с группой на маршруте
                 </p>
-            </div>
-             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card className="bg-card/50 backdrop-blur-sm border-primary/20 shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
-                    <CardContent className="p-6 text-center">
-                        <p className="text-6xl font-bold text-primary">85%</p>
-                        <p className="text-muted-foreground mt-2">туристов хотя бы раз теряли визуальный контакт с группой в походе.</p>
-                    </CardContent>
-                </Card>
-                <Card className="bg-card/50 backdrop-blur-sm border-accent/20 shadow-lg hover:shadow-accent/20 transition-shadow duration-300">
-                    <CardContent className="p-6 text-center">
-                        <p className="text-6xl font-bold text-accent">40%</p>
-                        <p className="text-muted-foreground mt-2">походов включают в себя мини-поисковую операцию внутри самой группы.</p>
-                    </CardContent>
-                </Card>
-            </div>
-        </section>
-
-        <section>
-            <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-12">Как мы решаем эту проблему</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {principles.map((feature) => (
-                     <Card key={feature.id} className="text-center bg-card border-border/50 shadow-md hover:-translate-y-2 transition-transform duration-300">
-                        <CardHeader className="items-center">
-                            <div className="p-4 bg-primary/10 rounded-full">
-                                {feature.icon}
-                            </div>
-                            <CardTitle className="mt-4">{feature.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-muted-foreground">{feature.description}</p>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </section>
-
-        <section>
-            <div className="text-center">
-                 <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-12">Перспективы и видение</h2>
-            </div>
-            <Card className="bg-card/50 border-border/50 shadow-xl overflow-hidden">
-                <CardContent className="p-8 md:p-12">
-                     <p className="text-center text-muted-foreground mb-12 max-w-3xl mx-auto text-lg">
-                        Наша технология не ограничивается лесом. Мы создаём платформу для безопасности в любой среде, где нет стабильной связи, но есть люди, за которых кто-то отвечает.
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-                        {perspectives.map((p) => (
-                            <div key={p.id} className="flex flex-col items-center gap-3 p-4 rounded-xl bg-background transition-all duration-300 hover:bg-muted/80 hover:shadow-lg">
-                                <div className="bg-primary/10 p-4 rounded-full">
-                                    <p.icon className="size-8 text-primary" />
-                                </div>
-                                <h4 className="font-semibold text-lg">{p.title}</h4>
-                                <p className="text-sm text-muted-foreground">{p.description}</p>
-                            </div>
-                        ))}
-                    </div>
-                     <div className="mt-12 text-center">
-                         <h3 className="text-xl font-semibold mb-4 text-foreground">Технологический стек будущего:</h3>
-                         <div className="flex justify-center items-center gap-6 flex-wrap">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                                <CheckCircle className="text-primary size-5"/>
-                                <span>Высокоточный GPS</span>
-                            </div>
-                             <div className="flex items-center gap-2 text-muted-foreground">
-                                <CheckCircle className="text-primary size-5"/>
-                                <span>Энергоэффективная LoRa</span>
-                             </div>
-                             <div className="flex items-center gap-2 text-muted-foreground">
-                                <CheckCircle className="text-primary size-5"/>
-                                <span>Ударопрочный корпус</span>
-                             </div>
-                         </div>
-                     </div>
-                </CardContent>
+              </CardContent>
             </Card>
+
+            <Card className="bg-card/50 backdrop-blur-sm border-amber-500/20 shadow-sm text-center">
+              <CardContent className="pt-6">
+                <p className="text-4xl md:text-5xl font-extrabold text-amber-500 font-mono">40%</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">
+                  экспедиций включают локальные поисковые задержки внутри отряда
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 backdrop-blur-sm border-emerald-500/20 shadow-sm text-center">
+              <CardContent className="pt-6">
+                <p className="text-4xl md:text-5xl font-extrabold text-emerald-500 font-mono">3 сек</p>
+                <p className="text-xs md:text-sm text-muted-foreground mt-2 font-medium">
+                  время экстренной доставки сигнала бедствия и точных GPS-координат
+                </p>
+              </CardContent>
+            </Card>
+          </div>
         </section>
 
-        <section>
-            <div className="text-center">
-                <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-12">Наша команда</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
-                {teamMembers.map((member) => (
-                    <div
-                        key={member.id}
-                        className="flex flex-col items-center text-center p-6 bg-card rounded-xl border border-border/50 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
-                    >
-                        <div className="w-14 h-14 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xl mb-4 border border-primary/20">
-                            {member.name.charAt(0)}
-                        </div>
-                        <h3 className="text-2xl font-bold">{member.name}</h3>
-                        <p className="text-primary font-semibold mt-1 text-sm">{member.role}</p>
-                        <p className="text-muted-foreground mt-3 text-sm leading-relaxed">{member.description}</p>
+        {/* Principles */}
+        <section className="space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Инженерные принципы платформы
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              Фундаментальные правила, на которых построена каждая строчка нашего кода
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {principles.map((principle) => {
+              const IconComponent = principle.icon;
+              return (
+                <Card
+                  key={principle.id}
+                  className="bg-card/60 backdrop-blur border-border/50 hover:border-primary/40 transition-all duration-200"
+                >
+                  <CardHeader className="flex flex-row items-start justify-between pb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-primary/10 rounded-xl text-primary">
+                        <IconComponent className="size-5" />
+                      </div>
+                      <CardTitle className="text-base font-bold">
+                        {principle.title}
+                      </CardTitle>
                     </div>
-                ))}
+                    <Badge variant="secondary" className="text-[10px] font-mono">
+                      {principle.badge}
+                    </Badge>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                      {principle.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* Team Section */}
+        <section className="space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Команда проекта
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              Инженеры, разработчики и энтузиасты активного туризма
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {teamMembers.map((member) => (
+              <Card
+                key={member.id}
+                className="bg-card/60 border-border/50 hover:border-primary/40 transition-all duration-200 flex flex-col justify-between"
+              >
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-lg border border-primary/20">
+                      {member.initials}
+                    </div>
+                    <Badge variant="outline" className="text-[10px] font-mono border-primary/30 text-primary">
+                      {member.badge}
+                    </Badge>
+                  </div>
+                  <CardTitle className="text-lg font-bold mt-3">
+                    {member.name}
+                  </CardTitle>
+                  <p className="text-xs font-semibold text-primary">
+                    {member.role}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {member.description}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 pt-2">
+                    {member.skills.map((skill, sIdx) => (
+                      <Badge key={`skill-${sIdx}`} variant="secondary" className="text-[10px]">
+                        {skill}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Vision and Future Perspectives */}
+        <section className="space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Перспективы и расширение платформы
+            </h2>
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
+              Технология адаптируется для любых условий, где отсутствует сотовая связь, но требуется безопасность людей
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {perspectives.map((p) => {
+              const IconComp = p.icon;
+              return (
+                <div
+                  key={p.id}
+                  className="p-5 rounded-xl bg-card/60 border border-border/50 hover:border-primary/30 transition-all flex flex-col items-center text-center space-y-3"
+                >
+                  <div className="p-3 bg-primary/10 text-primary rounded-xl">
+                    <IconComp className="size-6" />
+                  </div>
+                  <h4 className="font-bold text-sm text-foreground">{p.title}</h4>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{p.description}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <Card className="bg-muted/40 border-border/50 text-center p-6">
+            <div className="max-w-2xl mx-auto space-y-4">
+              <h3 className="text-lg font-bold flex items-center justify-center gap-2">
+                <Cpu className="size-5 text-primary" />
+                Аппаратный вектор развития: LoRa & Mesh-радиоканал
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground">
+                В дорожной карте проекта заложена прямая интеграция со спецификацией MeshCore и энергоэффективными радиомодулями LoRa (868/915 МГц) для полной независимости от сотовых операторов в радиусе до 15–20 км в горах.
+              </p>
             </div>
+          </Card>
         </section>
 
       </main>
