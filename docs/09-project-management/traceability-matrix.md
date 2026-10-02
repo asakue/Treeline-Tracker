@@ -1,6 +1,6 @@
 # Матрица прослеживаемости (Traceability Matrix)
 
-**Статус документа:** `COMPLETED`  
+**Статус документа:** `COMPLETED & UPDATED`  
 **Категория:** Управление проектом (`09-project-management`)
 
 ---
@@ -10,6 +10,11 @@
 | Требование | Архитектурный модуль | Реализация в коде | Тесты | Документация | Статус |
 |---|---|---|---|---|---|
 | **FR-001** (Identity & Profile) | Security & UI Layer | `src/core/security/identity-manager.ts`, `src/views/profile-page.tsx` | `security-phase2.test.ts`, `profile-page.test.tsx` | `04-security/identity.md` | `IMPLEMENTED` |
+| **FR-001a** (Multi-Auth Providers) | Auth & Security Layer | `src/firebase/config.ts`, `src/views/profile-page.tsx` | `auth.test.ts` (запланировано) | `04-security/identity.md` | `PLANNED` |
+| **FR-001b** (Account Linking) | Auth & Domain Layer | `src/entities/app/` | `auth.test.ts` (запланировано) | `04-security/identity.md` | `PLANNED` |
+| **FR-001c** (RBAC Custom Claims) | Security & Infrastructure | `firestore.rules`, `src/entities/app/` | `security-phase2.test.ts` | `04-security/identity.md` | `PLANNED` |
+| **FR-001d** (MFA 2FA) | Security Layer | `src/firebase/config.ts` | `auth.test.ts` (запланировано) | `04-security/identity.md` | `PLANNED` |
+| **FR-001e** (Session Management) | Auth & Security Layer | `src/entities/app/context/app-provider.tsx` | `profile-page.test.tsx` | `04-security/identity.md` | `PLANNED` |
 | **FR-002** (Groups) | Domain & Repository | `src/core/repositories/local-storage-group-repository.ts` | `security-phase2.test.ts` | `01-product/use-cases.md` | `IMPLEMENTED` |
 | **FR-003** (Join Group) | Security & Repository | `src/core/security/crypto-service.ts` | `security-phase2.test.ts` | `04-security/key-management.md` | `IMPLEMENTED` |
 | **FR-004** (Routes & GPX) | Domain, Utils & UI | `src/core/repositories/local-storage-route-repository.ts`, `src/core/utils/gpx-exporter.ts` | `gpx-exporter.test.ts`, `profile-page.test.tsx` | `01-product/use-cases.md` | `IMPLEMENTED` |
@@ -24,7 +29,6 @@
 | **FR-013** (Offline Queue) | Offline Layer | `src/core/offline/offline-queue.ts` | `offline.test.ts` | `03-architecture/backend.md` | `PLANNED` |
 | **FR-015** (SOS Trigger) | Application & UI | `src/features/emergency-services/` | `emergency.test.ts` | `01-product/use-cases.md` | `SIMULATED` |
 | **FR-017** (Mock Gateway) | Infrastructure | `src/core/infrastructure/mock-gateway.ts` | `emergency.test.ts` | `01-product/scope.md` | `SIMULATED` |
-| **FR-018** (AI Lost Hiker) | AI Layer (Genkit) | `src/ai/flows/suggest-search-areas...` | `ai.test.ts` | `03-architecture/adr/ADR-008...` | `PROTOTYPE` |
+| **FR-018** (AI Lost Hiker) | AI Layer (Genkit / Gemini) | `src/app/api/search-areas/route.ts` | `ai.test.ts` | `03-architecture/adr/ADR-008...` | `PROTOTYPE` |
 | **FR-022** (Privacy Modes UI) | Domain, Security & UI | `src/core/security/privacy-filter.ts`, `src/views/profile-page.tsx` | `security-phase2.test.ts`, `profile-page.test.tsx` | `04-security/privacy.md` | `IMPLEMENTED` |
 | **FR-024** (Simulation) | Simulation Layer | `src/core/simulation/simulation-engine.ts` | `simulation.test.ts` | `03-architecture/adr/ADR-009...` | `PLANNED` |
-
