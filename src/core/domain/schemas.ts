@@ -44,6 +44,8 @@ export const MemberSchema = z.object({
   lastUpdate: z.string(),
   lastUpdateTimestamp: z.number().default(() => Date.now()),
   publicKey: z.string().optional(),
+  phone: z.string().optional(),
+  emergencyContact: z.string().optional(),
 });
 
 export const GroupSchema = z.object({
@@ -58,6 +60,8 @@ export const GroupSchema = z.object({
   sharedKeyId: z.string().optional(),
   adminId: z.string().optional(),
   createdAt: z.number().optional(),
+  startDate: z.string().optional(),
+  leaderName: z.string().optional(),
 });
 
 export const RouteSchema = z.object({

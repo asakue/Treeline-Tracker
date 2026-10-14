@@ -11,6 +11,7 @@ import {
   Users,
   CloudSun,
   Waypoints,
+  BarChart3,
   Search,
   Info,
   Code,
@@ -26,14 +27,19 @@ const menuItems = [
     label: 'Трекер группы',
   },
   {
-    id: 'weather' as View,
-    icon: CloudSun,
-    label: 'Прогноз погоды',
-  },
-  {
     id: 'routes' as View,
     icon: Waypoints,
     label: 'Планировщик маршрутов',
+  },
+  {
+    id: 'analytics' as View,
+    icon: BarChart3,
+    label: 'Сводный отчёт и аналитика',
+  },
+  {
+    id: 'weather' as View,
+    icon: CloudSun,
+    label: 'Прогноз погоды',
   },
   {
     id: 'search' as View,

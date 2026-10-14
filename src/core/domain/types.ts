@@ -46,6 +46,8 @@ export interface Member {
   isVerified?: boolean;
   keyFingerprint?: string;
   privacyMode?: PrivacyMode;
+  phone?: string;
+  emergencyContact?: string;
 }
 
 export interface Group {
@@ -60,6 +62,8 @@ export interface Group {
   sharedKeyId?: string;
   adminId?: string;
   createdAt?: number;
+  startDate?: string; // YYYY-MM-DD
+  leaderName?: string;
 }
 
 export interface Route {

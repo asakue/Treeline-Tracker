@@ -17,6 +17,7 @@ import RoutePlanner from '@/views/route-planner';
 import LostHikerTool from '@/features/hiker-search/ui/lost-hiker-tool';
 import EmergencyServices from '@/views/emergency-services';
 import ProfilePage from '@/views/profile-page';
+import AnalyticsView from '@/views/analytics-view';
 import AboutUs from '@/views/about-us';
 import AboutApp from '@/views/about-app';
 
@@ -57,6 +58,7 @@ export default function AppLayout() {
       tracker: <LocationTracker />,
       weather: <WeatherForecast />,
       routes: <RoutePlanner />,
+      analytics: <AnalyticsView />,
       search: <LostHikerTool />,
       emergency: <EmergencyServices />,
       profile: <ProfilePage />,

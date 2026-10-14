@@ -11,6 +11,7 @@ export type View =
   | 'chat'
   | 'weather'
   | 'routes'
+  | 'analytics'
   | 'search'
   | 'emergency'
   | 'profile'

@@ -9,6 +9,7 @@ import {
   MessageSquare,
   CloudSun,
   Waypoints,
+  BarChart3,
   Search,
   Map,
   Siren,
@@ -41,6 +42,18 @@ const menuItems = [
     tooltip: 'Трекер группы',
   },
   {
+    id: 'routes' as View,
+    icon: Waypoints,
+    label: 'Маршруты',
+    tooltip: 'Планировщик маршрутов',
+  },
+  {
+    id: 'analytics' as View,
+    icon: BarChart3,
+    label: 'Отчёты / Аналитика',
+    tooltip: 'Сводный отчёт по походам (ФЗ-05)',
+  },
+  {
     id: 'chat' as View,
     icon: MessageSquare,
     label: 'Чат',
@@ -51,12 +64,6 @@ const menuItems = [
     icon: CloudSun,
     label: 'Погода',
     tooltip: 'Прогноз погоды',
-  },
-  {
-    id: 'routes' as View,
-    icon: Waypoints,
-    label: 'Маршруты',
-    tooltip: 'Планировщик маршрутов',
   },
 ];
 

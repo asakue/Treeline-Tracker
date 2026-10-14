@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
-import { MapPin, History, Plus, Waypoints, Mountain, Download, Battery, Users, ChevronRight, Tent, Waves, Pencil, Trash2, ShieldCheck, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
+import { MapPin, History, Plus, Waypoints, Mountain, Download, Battery, Users, ChevronRight, Tent, Waves, Pencil, Trash2, ShieldCheck, Lock, Eye, EyeOff, KeyRound, Calendar, BarChart3, Phone } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import {
   Select,
@@ -208,6 +208,18 @@ export default function LocationTracker() {
                     <Mountain className="size-4" />
                      <Badge variant="outline" className={cn('text-xs', difficultyStyles[selectedGroup.difficulty])}>{selectedGroup.difficulty}</Badge>
                   </div>
+                  {selectedGroup.startDate && (
+                    <div className="flex items-center gap-1.5 text-xs text-foreground">
+                      <Calendar className="size-3.5 text-primary" />
+                      <span>Выход: {new Date(selectedGroup.startDate).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                  )}
+                  {selectedGroup.leaderName && (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-muted-foreground font-medium">Руководитель:</span>
+                      <span className="text-foreground font-medium">{selectedGroup.leaderName}</span>
+                    </div>
+                  )}
                 </div>
               </div>
            )}
@@ -227,6 +239,10 @@ export default function LocationTracker() {
                 <Button variant="outline" className="w-full sm:w-auto" onClick={() => handleOpenForm()}>
                     <Plus className="mr-2 size-4"/>
                     Создать
+                </Button>
+                <Button variant="secondary" className="w-full sm:w-auto gap-1.5" onClick={() => setView('analytics')}>
+                    <BarChart3 className="size-4 text-primary" />
+                    <span>Сводный отчёт</span>
                 </Button>
                 {selectedGroup && (
                 <div className="flex gap-2">
@@ -302,6 +318,17 @@ export default function LocationTracker() {
                     <History className="size-3.5 sm:size-4" />
                     <span>{hiker.lastUpdate}</span>
                   </div>
+                  {hiker.phone && (
+                    <div className="flex items-center gap-1 sm:gap-1.5 text-foreground/80 font-mono text-[11px]" title="Номер телефона">
+                      <Phone className="size-3 text-primary" />
+                      <span>{hiker.phone}</span>
+                    </div>
+                  )}
+                  {hiker.emergencyContact && (
+                    <div className="text-[11px] text-muted-foreground" title="Контакт для экстренной связи">
+                      <span className="font-medium text-destructive/80">SOS:</span> {hiker.emergencyContact}
+                    </div>
+                  )}
                 </div>
               </div>
               <Badge variant="outline" className={cn("shrink-0 text-[11px] sm:text-xs py-0.5 px-2", statusClassName)}>
