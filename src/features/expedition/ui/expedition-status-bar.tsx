@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Wifi,
   Radio,
@@ -24,6 +24,7 @@ import {
   Search,
   ExternalLink,
   ChevronDown,
+  Mountain,
 } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
@@ -48,6 +49,7 @@ import { AuditLogger } from '@/core/transport/audit-logger';
 import { Rbac, ROLE_PERMISSIONS, type AuthSession } from '@/core/security/rbac-service';
 import type { UserRole, AuditLogEntry } from '@/core/domain/types';
 import type { TransportStatus } from '@/core/transport/interfaces';
+import { LocationFilter } from '@/core/location';
 
 export default function ExpeditionStatusBar() {
   const { toast } = useToast();
@@ -62,6 +64,9 @@ export default function ExpeditionStatusBar() {
   // GPS state
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const locationFilterRef = useRef<LocationFilter>(
+    new LocationFilter({ deadbandMeters: 5, minIntervalMs: 5000, adaptiveBatterySavings: true })
+  );
 
   // Battery state
   const [batteryLevel, setBatteryLevel] = useState<number>(88);
@@ -115,11 +120,26 @@ export default function ExpeditionStatusBar() {
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
+        const evalTrans = locationFilterRef.current.evaluateTransmission({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          batteryLevel,
+          timestamp: pos.timestamp,
+        });
+
         setGpsAccuracy(Math.round(pos.coords.accuracy));
         setGpsCoords({
           lat: parseFloat(pos.coords.latitude.toFixed(5)),
           lng: parseFloat(pos.coords.longitude.toFixed(5)),
         });
+
+        if (evalTrans.shouldTransmit) {
+          AuditLogger.log(
+            'GPS',
+            `[GPS ТЕЛЕМЕТРИЯ] Точка зафиксирована: ${pos.coords.latitude.toFixed(5)}, ${pos.coords.longitude.toFixed(5)} (±${Math.round(pos.coords.accuracy)}м, смещение: ${Math.round(evalTrans.distanceMoved)}м)`
+          );
+        }
       },
       () => {
         // Fallback simulated mountain GPS lock

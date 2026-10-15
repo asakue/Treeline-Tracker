@@ -4,6 +4,32 @@ All notable changes to the **Treeline Tracker** project are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-10-15
+
+### Added
+- **Geofencing & Safe Radius Monitoring (`safeRadiusMeters`) (FR-002, UC-02)**:
+  - Added configurable `safeRadiusMeters` field (50m to 10,000m, default 500m) to group domain models and schemas (`types.ts`, `schemas.ts`).
+  - Added interactive radius input and slider to `CreateGroupForm` (`create-group-form.tsx`).
+  - Rendered dynamic dashed Leaflet circle on `MapView` centered on the group leader.
+  - Implemented real-time Haversine proximity evaluation tracking statuses: `INSIDE` (within radius), `WARNING` (approaching 85% limit), and `BREACH` (exceeded radius).
+  - Added visual breach warning banner and structured audit entries in `AuditLogger`.
+- **GNSS Location Filtering & Battery-Aware Throttling (`LocationFilter`) (FR-006, NFR-008)**:
+  - Created `LocationFilter` class implementing Deadband (<5m static jitter elimination) and Throttle filtering (5s standard interval).
+  - Implemented adaptive power-saving throttle (30s interval) when battery level drops to $\le 15\%$.
+  - Added instant emergency bypass ensuring critical SOS signals are transmitted immediately without filtering delays.
+  - Implemented standard base32 Geohash spatial hashing utility (`src/core/location/geohash.ts`) conforming to `geofire-common` specification.
+  - Integrated `LocationFilter` into `ExpeditionStatusBar` position watcher.
+- **Browser-Native IndexedDB Offline Queue Storage (`IndexedDBQueueStorage`) (FR-013, FR-014)**:
+  - Created `IndexedDBQueueStorage` operating on browser-native database `treeline_tracker_db`.
+  - Configured object stores `offline_packets` (indexed by `timestamp` and `priority`) and `dedup_ids`.
+  - Added priority sorting guaranteeing `EMERGENCY_SOS` packets are flushed first.
+  - Implemented seamless fallback to `localStorage` for private browser windows and incognito mode.
+- **Firestore Multi-Tab Persistent Cache**:
+  - Configured `initializeFirestore` with `persistentLocalCache({ tabManager: persistentMultipleTabManager() })` in `src/firebase/index.ts`.
+- **Expanded Test Suite (`location-and-offline.test.ts`)**:
+  - Added 16 unit and integration tests covering Deadband, Throttle, battery adaptation, SOS bypass, Geohash spatial bounds, Haversine distance, safe radius breach, IndexedDB offline queuing, priority ordering, and fallback.
+  - Total automated test suite expanded to **57 tests across 6 test suites (100% pass rate)**.
+
 ## [0.5.0] - 2026-10-15
 
 ### Added

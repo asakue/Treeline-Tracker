@@ -12,10 +12,11 @@ import {
   HikerIcon,
 } from '@/shared/lib/map-utils';
 import { MAP_LAYERS, createTileLayer } from '@/shared/lib/map-layers';
-import { Layers, Mountain, Navigation, Map as MapIcon, ShieldCheck, Lock, Users } from 'lucide-react';
+import { Layers, Mountain, Navigation, Map as MapIcon, ShieldCheck, Lock, Users, AlertTriangle } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import type { Group } from '@/entities/group';
+import { LocationFilter, type GeofenceEvaluation } from '@/core/location';
 
 export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -25,9 +26,11 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const overlayControlsRef = useRef<Map<string, L.Control>>(new Map());
   const drawnRoutesRef = useRef<Map<string, L.Layer>>(new Map());
   const drawnHikersRef = useRef<Map<string, L.Layer>>(new Map());
+  const safeRadiusCircleRef = useRef<L.Circle | null>(null);
 
   const [currentLayerId, setCurrentLayerId] = useState<string>('opentopomap');
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
+  const [activeGeofenceBreaches, setActiveGeofenceBreaches] = useState<GeofenceEvaluation[]>([]);
 
   const { setView, mapOverlays, removeMapOverlay, activeGroupId, groupsHook, routesHook } = useAppContext();
   const routes = routesHook?.routes || [];
@@ -61,6 +64,13 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         });
         drawnRoutesRef.current.clear();
         drawnHikersRef.current.clear();
+
+        if (safeRadiusCircleRef.current && mapRef.current) {
+          if (mapRef.current.hasLayer(safeRadiusCircleRef.current)) {
+            mapRef.current.removeLayer(safeRadiusCircleRef.current);
+          }
+          safeRadiusCircleRef.current = null;
+        }
 
         overlayLayersRef.current.forEach((polygon) => {
           if (mapRef.current && mapRef.current.hasLayer(polygon)) {
@@ -209,6 +219,77 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
           }
         }
     });
+
+    // Handle Geofence Safe Radius (FR-002, UC-02)
+    const leaderHiker = activeHikers.find((h) => h.role === 'LEADER' || h.role === 'GUIDE') || activeHikers[0];
+    const safeRadius = activeGroup?.safeRadiusMeters || 500;
+    const breaches: GeofenceEvaluation[] = [];
+
+    if (leaderHiker && leaderHiker.coords) {
+      const leaderMatches = leaderHiker.coords.match(/[-+]?\d*\.?\d+/g);
+      if (leaderMatches && leaderMatches.length >= 2) {
+        const leaderLat = parseFloat(leaderMatches[0]);
+        const leaderLng = parseFloat(leaderMatches[1]);
+
+        if (!isNaN(leaderLat) && !isNaN(leaderLng)) {
+          // Check other hikers against leader position
+          activeHikers.forEach((hiker) => {
+            if (hiker.id !== leaderHiker.id && hiker.coords) {
+              const hMatch = hiker.coords.match(/[-+]?\d*\.?\d+/g);
+              if (hMatch && hMatch.length >= 2) {
+                const hLat = parseFloat(hMatch[0]);
+                const hLng = parseFloat(hMatch[1]);
+                if (!isNaN(hLat) && !isNaN(hLng)) {
+                  const evalRes = LocationFilter.evaluateGeofence(
+                    { latitude: hLat, longitude: hLng, name: hiker.name },
+                    { latitude: leaderLat, longitude: leaderLng },
+                    safeRadius
+                  );
+                  if (evalRes.status === 'BREACH') {
+                    breaches.push(evalRes);
+                  }
+                }
+              }
+            }
+          });
+
+          // Draw/update safe radius circle
+          const circleColor = breaches.length > 0 ? '#ef4444' : '#10b981';
+          if (safeRadiusCircleRef.current) {
+            safeRadiusCircleRef.current.setLatLng([leaderLat, leaderLng]);
+            safeRadiusCircleRef.current.setRadius(safeRadius);
+            safeRadiusCircleRef.current.setStyle({
+              color: circleColor,
+              fillColor: circleColor,
+              fillOpacity: breaches.length > 0 ? 0.16 : 0.08,
+              dashArray: '6, 6',
+            });
+          } else {
+            const circle = L.circle([leaderLat, leaderLng], {
+              radius: safeRadius,
+              color: circleColor,
+              fillColor: circleColor,
+              fillOpacity: breaches.length > 0 ? 0.16 : 0.08,
+              weight: 2,
+              dashArray: '6, 6',
+            })
+              .bindTooltip(`Геозона безопасности: ${safeRadius}м`, {
+                permanent: false,
+                direction: 'top',
+              })
+              .addTo(map);
+            safeRadiusCircleRef.current = circle;
+          }
+        }
+      }
+    } else {
+      if (safeRadiusCircleRef.current && map.hasLayer(safeRadiusCircleRef.current)) {
+        map.removeLayer(safeRadiusCircleRef.current);
+        safeRadiusCircleRef.current = null;
+      }
+    }
+
+    setActiveGeofenceBreaches(breaches);
   }, [activeGroup, setView]);
 
 
@@ -301,6 +382,20 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
           <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
             <ShieldCheck className="size-3 sm:size-3.5 text-emerald-500" />
             E2EE
+          </span>
+          <span className="text-muted-foreground hidden sm:inline">•</span>
+          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-primary font-medium shrink-0">
+            Зона: {activeGroup.safeRadiusMeters || 500}м
+          </span>
+        </div>
+      )}
+
+      {/* Geofence Breach Warning Banner */}
+      {activeGeofenceBreaches.length > 0 && (
+        <div className="absolute top-14 left-1/2 -translate-x-1/2 z-[1000] flex items-center gap-2 bg-destructive/95 backdrop-blur-md text-destructive-foreground px-3.5 py-1.5 rounded-lg border border-destructive shadow-lg animate-pulse max-w-[90vw] sm:max-w-md">
+          <AlertTriangle className="size-4 shrink-0" />
+          <span className="text-xs font-semibold truncate">
+            {activeGeofenceBreaches[0].message}
           </span>
         </div>
       )}

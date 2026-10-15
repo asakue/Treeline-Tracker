@@ -208,7 +208,9 @@ export function ProfilePage({ profile, onUpdateProfile }: ProfilePageProps = {})
     });
 
     // Загрузка режима приватности
-    const savedPrivacy = (typeof window !== 'undefined' ? localStorage.getItem('treeline_privacy_mode') : null) as PrivacyMode | null;
+    const savedPrivacy = (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined'
+      ? window.localStorage.getItem('treeline_privacy_mode')
+      : null) as PrivacyMode | null;
     if (savedPrivacy && ['NORMAL', 'REDUCED', 'STEALTH'].includes(savedPrivacy)) {
       setPrivacyMode(savedPrivacy);
     }
@@ -345,8 +347,8 @@ export function ProfilePage({ profile, onUpdateProfile }: ProfilePageProps = {})
 
   const handlePrivacyChange = (mode: PrivacyMode) => {
     setPrivacyMode(mode);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('treeline_privacy_mode', mode);
+    if (typeof window !== 'undefined' && typeof window.localStorage !== 'undefined') {
+      window.localStorage.setItem('treeline_privacy_mode', mode);
     }
     fetch('/api/profile', {
       method: 'POST',

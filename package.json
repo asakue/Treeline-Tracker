@@ -1,6 +1,6 @@
 {
-  "name": "nextn",
-  "version": "0.4.0",
+  "name": "treeline-tracker",
+  "version": "0.5.1",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",

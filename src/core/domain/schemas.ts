@@ -62,6 +62,7 @@ export const GroupSchema = z.object({
   createdAt: z.number().optional(),
   startDate: z.string().optional(),
   leaderName: z.string().optional(),
+  safeRadiusMeters: z.number().positive().optional().default(500),
   version: z.number().optional(),
   updatedAt: z.number().optional(),
 });

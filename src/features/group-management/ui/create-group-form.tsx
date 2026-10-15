@@ -47,6 +47,7 @@ const formSchema = z.object({
   routeId: z.string().optional(),
   startDate: z.string().min(4, 'Укажите дату выхода группы.'),
   leaderName: z.string().optional(),
+  safeRadiusMeters: z.coerce.number().min(50, 'Минимум 50м').max(10000, 'Максимум 10 000м').default(500),
 });
 
 type CreateGroupFormProps = {
@@ -83,6 +84,7 @@ export default function CreateGroupForm({
       routeId: '',
       startDate: new Date().toISOString().split('T')[0],
       leaderName: '',
+      safeRadiusMeters: 500,
     },
   });
 
@@ -116,6 +118,7 @@ export default function CreateGroupForm({
         routeId: groupToEdit.routeId || '',
         startDate: groupToEdit.startDate || new Date(groupToEdit.createdAt || Date.now()).toISOString().split('T')[0],
         leaderName: groupToEdit.leaderName || '',
+        safeRadiusMeters: groupToEdit.safeRadiusMeters ?? 500,
       });
       setMembersList(groupToEdit.hikers || []);
     } else {
@@ -128,6 +131,7 @@ export default function CreateGroupForm({
         routeId: '',
         startDate: todayStr,
         leaderName: userName.replace(' (Вы)', ''),
+        safeRadiusMeters: 500,
       });
       // Default leader member
       setMembersList([
@@ -223,6 +227,7 @@ export default function CreateGroupForm({
       routeId: values.routeId || undefined,
       startDate: values.startDate,
       leaderName: values.leaderName || undefined,
+      safeRadiusMeters: values.safeRadiusMeters ?? 500,
       hikers: membersList,
     };
 
@@ -398,6 +403,29 @@ export default function CreateGroupForm({
                 )}
               />
             </div>
+
+            <FormField
+              control={form.control}
+              name="safeRadiusMeters"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-1.5">
+                    <ShieldCheck className="size-4 text-emerald-500" />
+                    Безопасный радиус группы (геозона, метры)
+                  </FormLabel>
+                  <FormControl>
+                    <div className="flex items-center gap-2">
+                      <Input type="number" min={50} max={10000} step={50} placeholder="500" {...field} />
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">метров</span>
+                    </div>
+                  </FormControl>
+                  <p className="text-[11px] text-muted-foreground">
+                    При удалении участника дальше этого радиуса от лидера сработает тревога выхода из зоны (UC-02 / FR-002).
+                  </p>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Participants / Members Management */}
             <div className="space-y-3 pt-2 border-t border-border">

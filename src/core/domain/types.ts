@@ -64,6 +64,7 @@ export interface Group {
   createdAt?: number;
   startDate?: string; // YYYY-MM-DD
   leaderName?: string;
+  safeRadiusMeters?: number; // Geofence safety radius in meters (FR-002, default: 500)
   version?: number; // Optimistic Concurrency Control (OCC)
   updatedAt?: number;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { validateAndIncrementVersion, ConcurrencyConflictError } from '@/core/domain/occ';
+import { validateAndIncrementVersion, ConcurrencyConflictError, type VersionedEntity } from '@/core/domain/occ';
 import { Rbac, ROLE_PERMISSIONS } from '@/core/security/rbac-service';
 import { TransportManager } from '@/core/transport';
 import { ChaosSimulator } from '@/core/transport/chaos-simulator';
@@ -18,7 +18,7 @@ describe('Resilience, OCC, RBAC & Transport Integration Tests', () => {
 
   describe('1. Optimistic Concurrency Control (OCC) Engine', () => {
     it('successfully increments entity version on matching version', () => {
-      const currentEntity = {
+      const currentEntity: VersionedEntity & { name: string } = {
         id: 'route-caucasus-1',
         name: 'Перевал Азау',
         version: 1,
@@ -51,7 +51,7 @@ describe('Resilience, OCC, RBAC & Transport Integration Tests', () => {
     });
 
     it('defaults unversioned entities to version 1 and increments to 2', () => {
-      const unversioned = {
+      const unversioned: VersionedEntity & { name: string } = {
         id: 'legacy-route',
         name: 'Старая тропа',
       };

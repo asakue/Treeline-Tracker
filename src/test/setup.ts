@@ -80,3 +80,35 @@ if (typeof window !== 'undefined' && window.Image) {
   });
 }
 
+// Mock localStorage for JSDOM in Node 22/26
+if (typeof window !== 'undefined') {
+  let store: Record<string, string> = {};
+  const localStorageMock = {
+    getItem: vi.fn((key: string) => store[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = String(value);
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: vi.fn((idx: number) => Object.keys(store)[idx] ?? null),
+  };
+  Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock,
+    writable: true,
+    configurable: true,
+  });
+  Object.defineProperty(globalThis, 'localStorage', {
+    value: localStorageMock,
+    writable: true,
+    configurable: true,
+  });
+}
+
+

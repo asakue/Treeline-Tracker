@@ -13,14 +13,17 @@
 sequenceDiagram
     autonumber
     participant GPS as GNSS / Location Provider
+    participant Filter as LocationFilter (Deadband + Throttle)
     participant Core as Domain & Privacy Filter
     participant Sec as Security Engine (E2EE)
     participant TM as Transport Manager
     participant Net as Internet / Mesh Transport
     participant RecSec as Recipient Security Engine
-    participant Map as Recipient Leaflet Map
+    participant Map as Recipient Leaflet Map (Geofence Check)
 
-    GPS->>Core: Координаты (lat, lng, alt, accuracy)
+    GPS->>Filter: Координаты (lat, lng, alt, accuracy)
+    Filter->>Filter: Deadband (<5м) & Throttle (5с/30с) проверка (SOS bypass)
+    Filter->>Core: Валидные координаты движения
     Core->>Core: Применение политики приватности (огрубление/фильтр)
     Core->>Sec: Создать LocationUpdate (с sequence, timestamp, battery)
     Sec->>Sec: Подписать хеш закрытым ключом Ed25519
@@ -32,7 +35,8 @@ sequenceDiagram
     RecSec->>RecSec: Расшифровка шифротекста и проверка authTag
     RecSec->>RecSec: Верификация цифровой подписи отправителя
     RecSec->>Map: Передача проверенных координат
-    Map-->>Map: Плавное перемещение маркера туриста на карте
+    Map->>Map: Проверка удаления от лидера (Haversine safeRadiusMeters)
+    Map-->>Map: Плавное перемещение маркера туриста на карте (INSIDE/WARNING/BREACH)
 ```
 
 ---
