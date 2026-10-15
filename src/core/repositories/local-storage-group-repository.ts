@@ -84,8 +84,18 @@ export class LocalStorageGroupRepository implements IGroupRepository {
       return validated;
     }
 
+    const currentGroup = groups[index];
+    const currentVersion = currentGroup.version ?? 1;
+    const nextVersion = currentVersion + 1;
+
+    const withOcc: Group = {
+      ...validated,
+      version: nextVersion,
+      updatedAt: Date.now(),
+    };
+
     const updated = [...groups];
-    updated[index] = validated;
+    updated[index] = withOcc;
     this.save(updated);
 
     // Sync to server
@@ -93,11 +103,18 @@ export class LocalStorageGroupRepository implements IGroupRepository {
       fetch('/api/groups', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validated),
+        body: JSON.stringify(withOcc),
       }).catch((e) => console.warn('Failed to sync group update to server:', e));
     }
 
-    return validated;
+    import('@/core/transport').then(({ AuditLogger }) => {
+      AuditLogger.log(
+        'OCC',
+        `[OCC] Группа "${withOcc.name}" успешно обновлена: версия v${currentVersion} -> v${nextVersion}`
+      );
+    });
+
+    return withOcc;
   }
 
   async deleteGroup(id: string): Promise<boolean> {

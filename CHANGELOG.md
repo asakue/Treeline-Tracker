@@ -4,6 +4,42 @@ All notable changes to the **Treeline Tracker** project are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-10-15
+
+### Added
+- **Expedition Status Bar & Field Operations Dashboard (`ExpeditionStatusBar`)**:
+  - Sticky top bar with real-time connectivity status (`Cellular` / `MeshCore LoRa` / `Offline Queue`).
+  - GPS satellite fix accuracy indicator (`±3m` - `±5m`).
+  - WebCrypto E2EE session indicator (`Ed25519` + `AES-256-GCM`).
+  - Real-time battery status with charging indicator and low-battery alerts.
+  - Interactive RBAC Role Switcher modal (`hiker`, `guide`, `rescuer`, `admin`) with 6-digit TOTP MFA verification for privileged roles.
+- **Resilient Multi-Channel Transport Architecture (`TransportManager`)**:
+  - Transparent failover orchestrator: primary internet (Cloud Firestore / HTTPS) ➔ LoRa 868MHz Mesh simulation (`MockMeshCoreTransport` with RSSI metrics) ➔ persistent `OfflineQueue` store-and-forward buffer.
+  - Concurrent `flushQueue()` deduplication lock preventing race conditions during background sync.
+  - Anti-Replay packet deduplication cache (`DEDUP_CACHE_KEY`).
+- **Chaos Testing Simulator Engine (`ChaosSimulator` & `ChaosControlModal`)**:
+  - Developer & testing dock (FR-024) to simulate severe mountain blackout conditions: сотовая глушилка, экранирование радиоэфира, слайдер потери пакетов (0%–75%), сетевая задержка и симуляция критического разряда батареи (8%).
+- **Real-Time Audit Event Logger (`AuditLogger` & `AuditLogModal`)**:
+  - Transparent structured audit log stream (FR-025) tracking categories `[GPS]`, `[SECURITY]`, `[TRANSPORT]`, `[OCC]`, `[AUTH]`, `[SOS]`.
+  - Filter by event category, real-time subscriber streaming, search, and one-click JSON export.
+- **Optimistic Concurrency Control (OCC) Engine (`validateAndIncrementVersion`)**:
+  - Version-based concurrency locking for routes and group manifests to prevent accidental data overwrites during simultaneous edits by multiple guides.
+  - Custom `ConcurrencyConflictError` exception class.
+- **Expanded Automated Verification Suite (`Vitest`)**:
+  - Created `resilience-and-rbac.test.ts` integration test suite testing OCC version increments, RBAC permissions, MFA challenge, transport channel failovers, offline store-and-forward flushing, Chaos simulator drops, and audit stream subscriptions.
+  - Total automated test count expanded to **41 passed tests / 5 test suites** (100% pass rate).
+- **Mobile Navigation & Ergonomics Enhancements**:
+  - 5-item mobile bottom navigation bar (`Карта`, `Трекер`, `Маршруты`, `SOS`, `Меню`) with touch hit targets ≥ 44×44px.
+  - Improved padding, scrolling, and layout responsiveness across `EmergencyChat`, `EmergencyServices`, `LocationTracker`, and `RoutePlanner`.
+- **BRouter Hiking Routing & DEM Elevation Statistics**:
+  - Integrated BRouter foot trail routing between waypoints A and B with elevation gain/loss profiling and multi-path suggestion cards.
+
+### Fixed
+- Fixed RadioGroup uncontrolled-to-controlled state warning in `ProfilePage`.
+- Fixed Lucide icon `RadioOff` missing export in `ChaosControlModal` and `ExpeditionStatusBar`.
+- Fixed race condition in `TransportManager.flushQueue()` when triggered simultaneously by network change events and user actions.
+- Fixed non-scrollable overflow on mobile screens in `EmergencyServices`.
+
 ---
 
 ## [0.4.1] - 2026-09-25

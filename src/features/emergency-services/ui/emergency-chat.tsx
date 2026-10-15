@@ -123,34 +123,34 @@ export default function EmergencyChat({ onBack }: EmergencyChatProps) {
   };
 
   return (
-    <div className="flex flex-col h-full p-4 md:p-6">
-      <Card className="flex flex-col h-full bg-destructive/10 border-destructive">
-        <CardHeader>
+    <div className="flex flex-col h-full p-2 sm:p-4 md:p-6">
+      <Card className="flex flex-col h-full bg-destructive/10 border-destructive shadow-sm">
+        <CardHeader className="p-3 sm:p-6 pb-2 sm:pb-3">
           <div className="flex items-center justify-between gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={onBack}
-              className="text-destructive-foreground hover:bg-destructive/20 hover:text-destructive-foreground"
+              className="text-destructive-foreground hover:bg-destructive/20 hover:text-destructive-foreground shrink-0 size-8 sm:size-9"
             >
-              <ArrowLeft />
+              <ArrowLeft className="size-4 sm:size-5" />
             </Button>
-            <div className="text-center">
-              <CardTitle className="text-destructive-foreground">Экстренный чат</CardTitle>
-              <CardDescription className="text-destructive-foreground/80">Чат с оперативным диспетчером 112</CardDescription>
+            <div className="text-center min-w-0">
+              <CardTitle className="text-destructive-foreground text-base sm:text-lg truncate">Экстренный чат</CardTitle>
+              <CardDescription className="text-destructive-foreground/80 text-[11px] sm:text-xs truncate">Чат с оперативным диспетчером 112</CardDescription>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleCall}
-              className="bg-transparent border-destructive-foreground/50 text-destructive-foreground hover:bg-destructive/20"
+              className="bg-transparent border-destructive-foreground/50 text-destructive-foreground hover:bg-destructive/20 h-8 sm:h-9 text-xs sm:text-sm px-2.5 sm:px-3 shrink-0"
             >
-              <Phone className="mr-2 size-4" />
+              <Phone className="mr-1.5 size-3.5 sm:size-4" />
               112
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col flex-1 gap-4 overflow-hidden">
+        <CardContent className="flex flex-col flex-1 gap-3 p-3 sm:p-6 pt-0 sm:pt-0 overflow-hidden">
           <ScrollArea className="flex-1 -mr-4 pr-4" viewportRef={scrollAreaRef}>
             <div className="space-y-4 pr-4">
               {messagesList.map((message) => (

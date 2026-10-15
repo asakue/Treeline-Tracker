@@ -307,7 +307,7 @@ export default function RoutePlanner() {
                           </CardDescription>
                         </div>
 
-                        <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                        <div className="flex items-center gap-1.5 self-end sm:self-auto flex-wrap">
                           <Button
                             variant="secondary"
                             size="sm"
@@ -461,7 +461,7 @@ export default function RoutePlanner() {
                           </CardDescription>
                         </div>
 
-                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
                           <Button
                             variant="default"
                             size="sm"

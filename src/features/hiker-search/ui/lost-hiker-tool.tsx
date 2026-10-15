@@ -42,6 +42,13 @@ export default function LostHikerTool() {
     try {
       const response = await suggestSearchAreas(values);
       setResult(response);
+      import('@/core/transport').then(({ AuditLogger }) => {
+        AuditLogger.log(
+          'GPS',
+          `[ИИ-ПОИСК SAR] Рассчитаны сектора поиска для координаты ${values.lastKnownLocation}. Уверенность: ${response.confidenceLevel}`,
+          { lastKnownLocation: values.lastKnownLocation, confidence: response.confidenceLevel }
+        );
+      });
     } catch (error: any) {
       console.error("Ошибка при вызове ИИ:", error);
       toast({
@@ -156,23 +163,30 @@ export default function LostHikerTool() {
               <h4 className="font-semibold text-card-foreground">Предлагаемые зоны</h4>
               <p className="text-sm text-card-foreground/80 whitespace-pre-wrap">{result.suggestedSearchAreas}</p>
             </div>
-             <div className="!mt-6">
-              <h4 className="font-semibold text-card-foreground">Уровень уверенности</h4>
-              <p className="text-sm text-card-foreground/80">{result.confidenceLevel}</p>
-            </div>
-             {result.searchAreaPolygon && result.searchAreaPolygon.length > 0 && (
               <div className="!mt-6">
-                <Button onClick={handleShowOnMap} className="w-full">
-                  <Map className="mr-2 h-4 w-4" />
-                  Показать на карте
-                </Button>
+                <h4 className="font-semibold text-card-foreground">Уровень уверенности</h4>
+                <p className="text-sm text-card-foreground/80">{result.confidenceLevel}</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-}
+
+              {/* Explicit Disclaimer (FR-019) */}
+              <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs text-amber-800 dark:text-amber-200">
+                <span className="font-bold">⚠️ Отказ от ответственности: </span>
+                Результаты расчёта секторов сформированы алгоритмом ИИ как вспомогательная оценка. Окончательное решение о границах развёртывания поисково-спасательных подразделений принимает руководитель спасательной операции (РСО / МЧС).
+              </div>
+
+              {result.searchAreaPolygon && result.searchAreaPolygon.length > 0 && (
+                <div className="!mt-4">
+                  <Button onClick={handleShowOnMap} className="w-full">
+                    <Map className="mr-2 h-4 w-4" />
+                    Показать полигон на карте
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
 
     

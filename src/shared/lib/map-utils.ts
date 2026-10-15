@@ -3,27 +3,34 @@ import type { Route } from '@/entities/route';
 import type { Hiker, Group } from '@/entities/group';
 import type { View } from '@/entities/app';
 
-// Default Leaflet icon setup
-export const DefaultIcon = L.icon({
-  iconUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  iconRetinaUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  shadowUrl:
-    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  tooltipAnchor: [16, -28],
-  shadowSize: [41, 41],
-});
+// Default Leaflet icon setup - guarded for SSR
+export const DefaultIcon =
+  typeof window !== 'undefined'
+    ? L.icon({
+        iconUrl:
+          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+        iconRetinaUrl:
+          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+        shadowUrl:
+          'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        tooltipAnchor: [16, -28],
+        shadowSize: [41, 41],
+      })
+    : ({} as any);
 
-export const HikerIcon = L.icon({
-  iconUrl: '/hiker-icon.svg',
-  iconSize: [30, 30],
-  iconAnchor: [15, 15],
-  popupAnchor: [0, -15],
-});
+export const HikerIcon =
+  typeof window !== 'undefined'
+    ? L.icon({
+        iconUrl: '/hiker-icon.svg',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15],
+      })
+    : ({} as any);
+
 
 // Helper to create the content for a route's starting point popup
 export const createStartPopupContent = (

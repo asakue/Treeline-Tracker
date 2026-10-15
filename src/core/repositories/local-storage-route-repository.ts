@@ -100,19 +100,36 @@ export class LocalStorageRouteRepository implements IRouteRepository {
       return validated;
     }
 
+    const currentRoute = routes[index];
+    const currentVersion = currentRoute.version ?? 1;
+    const nextVersion = currentVersion + 1;
+
+    const withOcc: Route = {
+      ...validated,
+      version: nextVersion,
+      updatedAt: Date.now(),
+    };
+
     const updated = [...routes];
-    updated[index] = validated;
+    updated[index] = withOcc;
     this.save(updated);
 
     if (this.isClient()) {
       fetch('/api/routes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validated),
+        body: JSON.stringify(withOcc),
       }).catch((e) => console.warn('Failed to sync route update to server:', e));
     }
 
-    return validated;
+    import('@/core/transport').then(({ AuditLogger }) => {
+      AuditLogger.log(
+        'OCC',
+        `[OCC] Маршрут "${withOcc.name}" успешно сохранен: версия v${currentVersion} -> v${nextVersion}`
+      );
+    });
+
+    return withOcc;
   }
 
   async archiveRoute(id: string): Promise<Route | null> {

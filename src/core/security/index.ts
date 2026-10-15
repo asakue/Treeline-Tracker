@@ -8,3 +8,4 @@ export * from './privacy-filter';
 export * from './replay-protection';
 export * from './identity-manager';
 export * from './secure-packet-service';
+export * from './rbac-service';

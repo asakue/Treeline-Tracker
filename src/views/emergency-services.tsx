@@ -161,21 +161,20 @@ export default function EmergencyServices() {
   }
 
   return (
-    <div className="p-4 md:p-6 h-full flex flex-col items-center justify-center">
-      <Card className="w-full max-w-2xl bg-destructive/10 border-destructive">
-        <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold text-destructive-foreground">
+    <div className="min-h-full py-6 px-3 sm:px-4 md:p-6 flex flex-col items-center justify-center">
+      <Card className="w-full max-w-2xl bg-destructive/10 border-destructive shadow-md">
+        <CardHeader className="text-center p-4 sm:p-6 pb-2 sm:pb-4">
+          <CardTitle className="text-2xl sm:text-3xl font-bold text-destructive-foreground">
             Экстренная Помощь
           </CardTitle>
-          <CardDescription className="text-destructive-foreground/80">
-            Используйте эти функции только в случае реальной чрезвычайной
-            ситуации.
+          <CardDescription className="text-destructive-foreground/80 text-xs sm:text-sm">
+            Используйте эти функции только в случае реальной чрезвычайной ситуации.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 xs:grid-cols-2 gap-4 p-6">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-4 sm:p-6">
           <Button
             variant="outline"
-            className="h-24 text-lg md:h-28 border-destructive text-destructive-foreground hover:bg-destructive/20 hover:text-destructive-foreground flex flex-col gap-2"
+            className="h-20 sm:h-24 md:h-28 text-base sm:text-lg border-destructive text-destructive-foreground hover:bg-destructive/20 hover:text-destructive-foreground flex flex-col gap-1.5 sm:gap-2 shadow-xs cursor-pointer"
             onClick={handleSendLocation}
           >
             <MapPin className="size-8" />

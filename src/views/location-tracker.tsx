@@ -224,10 +224,10 @@ export default function LocationTracker() {
               </div>
            )}
         </CardHeader>
-        <CardContent>
-            <div className="flex flex-col sm:flex-row gap-2">
+        <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
               <Select value={selectedGroupId} onValueChange={handleSetSelectedGroup}>
-                <SelectTrigger className="w-full sm:w-[250px]">
+                <SelectTrigger className="w-full sm:w-[220px] md:w-[250px]">
                   <SelectValue placeholder="Выберите группу" />
                 </SelectTrigger>
                 <SelectContent>
@@ -236,21 +236,21 @@ export default function LocationTracker() {
                   ))}
                 </SelectContent>
               </Select>
-                <Button variant="outline" className="w-full sm:w-auto" onClick={() => handleOpenForm()}>
-                    <Plus className="mr-2 size-4"/>
+                <Button variant="outline" className="w-full sm:w-auto cursor-pointer" onClick={() => handleOpenForm()}>
+                    <Plus className="mr-1.5 size-4"/>
                     Создать
                 </Button>
-                <Button variant="secondary" className="w-full sm:w-auto gap-1.5" onClick={() => setView('analytics')}>
+                <Button variant="secondary" className="w-full sm:w-auto gap-1.5 cursor-pointer" onClick={() => setView('analytics')}>
                     <BarChart3 className="size-4 text-primary" />
                     <span>Сводный отчёт</span>
                 </Button>
                 {selectedGroup && (
-                <div className="flex gap-2">
-                     <Button variant="ghost" className="w-full" onClick={() => handleOpenForm(selectedGroup)}>
-                        <Pencil className="mr-2 size-4"/>
+                <div className="flex gap-2 w-full sm:w-auto">
+                     <Button variant="ghost" className="flex-1 sm:flex-none cursor-pointer" onClick={() => handleOpenForm(selectedGroup)}>
+                        <Pencil className="mr-1.5 size-4"/>
                         Редактировать
                      </Button>
-                    <Button variant="destructive" size="icon" className="shrink-0" onClick={() => openDeleteDialog(selectedGroup)}>
+                    <Button variant="destructive" size="icon" className="shrink-0 cursor-pointer" onClick={() => openDeleteDialog(selectedGroup)}>
                         <Trash2 className="size-4"/>
                         <span className="sr-only">Удалить группу</span>
                     </Button>

@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
 3. Координаты замкнутого полигона для карты в формате массива [широта, долгота], образующих 4-6 вершин вокруг наиболее вероятной зоны поиска.`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',

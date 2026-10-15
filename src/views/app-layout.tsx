@@ -20,6 +20,7 @@ import ProfilePage from '@/views/profile-page';
 import AnalyticsView from '@/views/analytics-view';
 import AboutUs from '@/views/about-us';
 import AboutApp from '@/views/about-app';
+import ExpeditionStatusBar from '@/features/expedition/ui/expedition-status-bar';
 
 // Leaflet map components require dynamic import with ssr: false due to browser-only window/DOM APIs
 const MapView = dynamic(() => import('@/views/map-view'), {
@@ -94,12 +95,15 @@ export default function AppLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen w-full bg-background">
+      <div className="flex h-screen w-full bg-background overflow-hidden">
         {!isMobile && <DesktopSidebar />}
-        <div className="flex-1 relative overflow-y-auto">
-          <React.Suspense fallback={<ViewLoader />}>
-            {renderMainContent()}
-          </React.Suspense>
+        <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+          <ExpeditionStatusBar />
+          <div className="flex-1 relative overflow-y-auto min-h-0">
+            <React.Suspense fallback={<ViewLoader />}>
+              {renderMainContent()}
+            </React.Suspense>
+          </div>
         </div>
         {isMobile && <MobileBottomNav />}
       </div>

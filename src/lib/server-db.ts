@@ -125,10 +125,14 @@ export const ServerDbService = {
     if (index === -1) {
       throw new Error(`Group with ID ${id} not found`);
     }
+    const current = db.groups[index];
+    const newVersion = (current.version ?? 1) + 1;
     const updated: Group = {
-      ...db.groups[index],
+      ...current,
       ...groupData,
       id,
+      version: groupData.version !== undefined ? groupData.version : newVersion,
+      updatedAt: Date.now(),
     };
     db.groups[index] = updated;
     return updated;
@@ -179,6 +183,8 @@ export const ServerDbService = {
       id: route.id || `route_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       createdAt: Date.now(),
       isArchived: false,
+      version: 1,
+      updatedAt: Date.now(),
     };
     db.routes.unshift(newRoute);
     return newRoute;
@@ -190,10 +196,14 @@ export const ServerDbService = {
     if (index === -1) {
       throw new Error(`Route with ID ${id} not found`);
     }
+    const current = db.routes[index];
+    const newVersion = (current.version ?? 1) + 1;
     const updated: Route = {
-      ...db.routes[index],
+      ...current,
       ...routeData,
       id,
+      version: routeData.version !== undefined ? routeData.version : newVersion,
+      updatedAt: Date.now(),
     };
     db.routes[index] = updated;
     return updated;

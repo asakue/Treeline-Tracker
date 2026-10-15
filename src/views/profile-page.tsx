@@ -638,7 +638,7 @@ export function ProfilePage({ profile, onUpdateProfile }: ProfilePageProps = {})
                     <Palette className="size-4" />
                     Тема оформления
                   </Label>
-                  <RadioGroup value={mounted ? theme : undefined} onValueChange={setTheme} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <RadioGroup value={theme || 'system'} onValueChange={setTheme} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {themeOptions.map((option) => {
                       const Icon = option.icon;
                       return (

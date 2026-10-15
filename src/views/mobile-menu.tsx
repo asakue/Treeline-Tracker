@@ -9,6 +9,7 @@ import { Button } from '@/shared/ui/button';
 import { Separator } from '@/shared/ui/separator';
 import {
   Users,
+  MessageSquare,
   CloudSun,
   Waypoints,
   BarChart3,
@@ -21,6 +22,11 @@ import type { View } from '@/entities/app';
 import { useAppContext } from '@/entities/app';
 
 const menuItems = [
+  {
+    id: 'chat' as View,
+    icon: MessageSquare,
+    label: 'Групповой чат (E2EE)',
+  },
   {
     id: 'tracker' as View,
     icon: Users,

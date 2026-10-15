@@ -64,6 +64,8 @@ export interface Group {
   createdAt?: number;
   startDate?: string; // YYYY-MM-DD
   leaderName?: string;
+  version?: number; // Optimistic Concurrency Control (OCC)
+  updatedAt?: number;
 }
 
 export interface Route {
@@ -81,6 +83,18 @@ export interface Route {
   isArchived?: boolean;
   archivedAt?: number;
   createdAt?: number;
+  version?: number; // Optimistic Concurrency Control (OCC)
+  updatedAt?: number;
+}
+
+export type UserRole = 'hiker' | 'guide' | 'rescuer' | 'admin';
+
+export interface AuditLogEntry {
+  id: string;
+  timestamp: number;
+  category: 'GPS' | 'SECURITY' | 'TRANSPORT' | 'OCC' | 'SOS' | 'AUTH';
+  message: string;
+  details?: Record<string, unknown>;
 }
 
 export interface EmergencyEvent {
@@ -121,5 +135,7 @@ export interface UserIdentity {
   privateKey?: string; // PKCS#8 or raw private key (only stored in secure local state)
   displayName: string;
   createdAt: number;
+  role?: UserRole;
 }
+
 

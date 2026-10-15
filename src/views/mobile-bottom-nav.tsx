@@ -3,7 +3,8 @@
 import { memo, useState } from 'react';
 import {
   Map,
-  MessageSquare,
+  Users,
+  Waypoints,
   Siren,
   MoreHorizontal,
 } from 'lucide-react';
@@ -24,16 +25,17 @@ const MobileBottomNav = memo(() => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const mainNavItems = [
     { id: 'map' as View, icon: Map, tooltip: 'Карта' },
-    { id: 'chat' as View, icon: MessageSquare, tooltip: 'Чат' },
+    { id: 'tracker' as View, icon: Users, tooltip: 'Трекер' },
+    { id: 'routes' as View, icon: Waypoints, tooltip: 'Маршруты' },
     {
       id: 'emergency' as View,
       icon: Siren,
-      tooltip: 'Вызов служб',
+      tooltip: 'SOS',
       className: () =>
         cn(
           'text-destructive hover:bg-destructive/10 hover:text-destructive',
           activeView === 'emergency' &&
-            'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground'
+            'bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground font-bold'
         ),
     },
   ];
@@ -45,22 +47,22 @@ const MobileBottomNav = memo(() => {
 
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm border-t md:hidden z-50">
-      <div className="flex justify-around items-center p-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border md:hidden z-50">
+      <div className="flex justify-around items-center px-1 py-1">
         {mainNavItems.map(({ id, icon: Icon, tooltip, className }) => (
           <Button
             key={id}
             variant="ghost"
             size="sm"
             className={cn(
-              'flex flex-col h-auto items-center justify-center p-1 rounded-md w-1/4',
-              activeView === id && !className && 'bg-accent text-accent-foreground',
+              'flex flex-col h-12 items-center justify-center p-1 rounded-md flex-1 min-w-0 transition-all cursor-pointer',
+              activeView === id && !className && 'bg-accent/80 text-accent-foreground font-semibold',
               className && className()
             )}
             onClick={() => setView(id)}
           >
-            <Icon className="size-5" />
-            <span className="text-xs mt-1">{tooltip}</span>
+            <Icon className="size-4.5 shrink-0" />
+            <span className="text-[10px] sm:text-xs mt-0.5 truncate">{tooltip}</span>
           </Button>
         ))}
         <Sheet key="mobile-nav-more-sheet" open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -68,10 +70,10 @@ const MobileBottomNav = memo(() => {
             <Button
               variant="ghost"
               size="sm"
-              className="flex flex-col h-auto items-center justify-center p-1 rounded-md w-1/4"
+              className="flex flex-col h-12 items-center justify-center p-1 rounded-md flex-1 min-w-0 cursor-pointer"
             >
-              <MoreHorizontal className="size-5" />
-              <span className="text-xs mt-1">Меню</span>
+              <MoreHorizontal className="size-4.5 shrink-0" />
+              <span className="text-[10px] sm:text-xs mt-0.5 truncate">Меню</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="bottom" className="h-auto pt-4 px-0 pb-0">

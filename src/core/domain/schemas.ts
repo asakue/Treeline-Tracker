@@ -62,6 +62,8 @@ export const GroupSchema = z.object({
   createdAt: z.number().optional(),
   startDate: z.string().optional(),
   leaderName: z.string().optional(),
+  version: z.number().optional(),
+  updatedAt: z.number().optional(),
 });
 
 export const RouteSchema = z.object({
@@ -79,6 +81,8 @@ export const RouteSchema = z.object({
   isArchived: z.boolean().optional(),
   archivedAt: z.number().optional(),
   createdAt: z.number().optional(),
+  version: z.number().optional(),
+  updatedAt: z.number().optional(),
 });
 
 export const EmergencyEventSchema = z.object({
