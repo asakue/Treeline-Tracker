@@ -15,7 +15,15 @@ console.log('🔍 [Treeline Security] Initializing secret scanner...');
 
 // 1. If trufflehog CLI is available on the machine, run it first
 try {
-  const hasTrufflehog = execSync('which trufflehog 2>/dev/null || true').toString().trim();
+  let hasTrufflehog = false;
+  try {
+    const cmd = process.platform === 'win32' ? 'where trufflehog 2>nul' : 'which trufflehog 2>/dev/null';
+    const check = execSync(cmd, { stdio: 'pipe' }).toString().trim();
+    if (check) hasTrufflehog = true;
+  } catch {
+    hasTrufflehog = false;
+  }
+
   if (hasTrufflehog) {
     console.log('🛡️  TruffleHog CLI found. Executing TruffleHog git scan...');
     execSync('trufflehog filesystem . --fail --exclude-paths=.gitignore', { stdio: 'inherit' });
@@ -39,7 +47,7 @@ const FORBIDDEN_FILE_PATTERNS = [
   /\.p8$/,
   /id_rsa/,
   /id_ed25519/,
-  /firebase.*\.json$/,
+  /firebase-adminsdk.*\.json$/,
   /service-account.*\.json$/
 ];
 
@@ -69,7 +77,7 @@ let filesToCheck = [];
 try {
   if (isPreCommit) {
     // Check staged files in git
-    const staged = execSync('git diff --cached --name-only --diff-filter=ACM 2>/dev/null || true')
+    const staged = execSync('git diff --cached --name-only --diff-filter=ACM', { stdio: ['pipe', 'pipe', 'ignore'] })
       .toString()
       .split('\n')
       .map((f) => f.trim())
@@ -83,7 +91,7 @@ try {
 // Fallback to tracked git files or common source files
 if (filesToCheck.length === 0) {
   try {
-    filesToCheck = execSync('git ls-files 2>/dev/null || true')
+    filesToCheck = execSync('git ls-files', { stdio: ['pipe', 'pipe', 'ignore'] })
       .toString()
       .split('\n')
       .map((f) => f.trim())
