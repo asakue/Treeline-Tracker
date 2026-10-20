@@ -60,3 +60,6 @@ secrets.json
 .agent
 .agents/
 
+
+.vercel
+.env*
