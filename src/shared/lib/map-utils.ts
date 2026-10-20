@@ -31,6 +31,26 @@ export const HikerIcon =
       })
     : ({} as any);
 
+export const createStartIcon = () =>
+  typeof window !== 'undefined'
+    ? L.divIcon({
+        className: 'custom-route-marker-a',
+        html: `<div style="background-color:#10b981;color:#ffffff;font-weight:900;width:28px;height:28px;border-radius:9999px;border:2.5px solid #ffffff;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,0.4);cursor:pointer;">A</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      })
+    : ({} as any);
+
+export const createEndIcon = () =>
+  typeof window !== 'undefined'
+    ? L.divIcon({
+        className: 'custom-route-marker-b',
+        html: `<div style="background-color:#ef4444;color:#ffffff;font-weight:900;width:28px;height:28px;border-radius:9999px;border:2.5px solid #ffffff;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,0.4);cursor:pointer;">B</div>`,
+        iconSize: [28, 28],
+        iconAnchor: [14, 14],
+      })
+    : ({} as any);
+
 
 // Helper to create the content for a route's starting point popup
 export const createStartPopupContent = (

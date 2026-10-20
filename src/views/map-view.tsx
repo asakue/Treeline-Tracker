@@ -9,6 +9,8 @@ import {
   createEndPopupContent, 
   createRemoveOverlayControl,
   createHikerPopupContent,
+  createStartIcon,
+  createEndIcon,
   DefaultIcon,
   HikerIcon,
 } from '@/shared/lib/map-utils';
@@ -29,6 +31,7 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const drawnHikersRef = useRef<Map<string, L.Layer>>(new Map());
   const hikerClusterGroupRef = useRef<any>(null);
   const safeRadiusCircleRef = useRef<L.Circle | null>(null);
+  const hasFittedBoundsRef = useRef<boolean>(false);
 
   const [currentLayerId, setCurrentLayerId] = useState<string>('opentopomap');
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
@@ -39,10 +42,74 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const { groups } = groupsHook;
   const activeGroup = groups.find(g => g.id === activeGroupId);
 
+  // Auto-fit helper to frame the active route or active group members
+  const fitToActiveRouteOrHikers = () => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const activeRoute = routes.find(r => r.id === activeGroup?.routeId);
+    if (activeRoute?.path && activeRoute.path.length > 0) {
+      const bounds = L.latLngBounds(activeRoute.path);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        return;
+      }
+    }
+
+    const activeHikers = activeGroup?.hikers || [];
+    const validCoords: [number, number][] = [];
+    activeHikers.forEach(h => {
+      const matches = h.coords?.match(/[-+]?\d*\.?\d+/g);
+      if (matches && matches.length >= 2) {
+        const lat = parseFloat(matches[0]);
+        const lng = parseFloat(matches[1]);
+        if (!isNaN(lat) && !isNaN(lng)) validCoords.push([lat, lng]);
+      }
+    });
+
+    if (validCoords.length > 0) {
+      const bounds = L.latLngBounds(validCoords);
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+        return;
+      }
+    }
+
+    map.setView([43.5, 42], 8);
+  };
+
+  // Reset auto-fit on active group change
+  useEffect(() => {
+    hasFittedBoundsRef.current = false;
+  }, [activeGroupId]);
+
+  // Handle ResizeObserver to prevent blank/gray tile rendering on container layout shifts
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.invalidateSize();
+    });
+    observer.observe(mapContainerRef.current);
+
+    const timer1 = setTimeout(() => mapRef.current?.invalidateSize(), 150);
+    const timer2 = setTimeout(() => mapRef.current?.invalidateSize(), 500);
+
+    return () => {
+      observer.disconnect();
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
   // Initialize map
   useEffect(() => {
     if (mapContainerRef.current && !mapRef.current) {
-        const center: [number, number] = [43.5, 42]; // Centered around the Caucasus
+        // Clear leftover leaflet ID on container to prevent StrictMode re-init crash
+        if ((mapContainerRef.current as any)._leaflet_id) {
+          delete (mapContainerRef.current as any)._leaflet_id;
+        }
+
+        const center: [number, number] = centerOn || [43.5, 42]; // Caucasus fallback
         
         const mapInstance = L.map(mapContainerRef.current!, { 
           attributionControl: true,
@@ -55,6 +122,20 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         const initialLayer = createTileLayer('opentopomap');
         initialLayer.addTo(mapInstance);
         activeTileLayerRef.current = initialLayer;
+
+        // Resilient fallback: If OpenTopoMap hits network/rate limits, seamlessly switch to OSM standard
+        let tileFailures = 0;
+        initialLayer.on('tileerror', () => {
+          tileFailures++;
+          if (tileFailures >= 5 && mapRef.current && activeTileLayerRef.current === initialLayer) {
+            console.warn('[MapView] OpenTopoMap rate limit detected, switching to OSM Standard');
+            mapRef.current.removeLayer(initialLayer);
+            const fallbackLayer = createTileLayer('osmStandard');
+            fallbackLayer.addTo(mapRef.current);
+            activeTileLayerRef.current = fallbackLayer;
+            setCurrentLayerId('osmStandard');
+          }
+        });
 
         // Initialize Marker Cluster Group for Hikers (leaflet.markercluster)
         const clusterGroup = (L as any).markerClusterGroup ? (L as any).markerClusterGroup({
@@ -73,6 +154,11 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
 
         clusterGroup.addTo(mapInstance);
         hikerClusterGroupRef.current = clusterGroup;
+
+        // Invalidate size immediately once DOM settles
+        requestAnimationFrame(() => {
+          mapInstance.invalidateSize();
+        });
     }
 
     return () => {
@@ -117,9 +203,20 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         mapRef.current.remove();
         mapRef.current = null;
       }
+      if (mapContainerRef.current && (mapContainerRef.current as any)._leaflet_id) {
+        delete (mapContainerRef.current as any)._leaflet_id;
+      }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-fit on initial mount when route or hikers are ready
+  useEffect(() => {
+    if (!hasFittedBoundsRef.current && !centerOn && mapRef.current && (routes.length > 0 || activeGroup)) {
+      fitToActiveRouteOrHikers();
+      hasFittedBoundsRef.current = true;
+    }
+  }, [routes, activeGroup, centerOn]);
 
   // Switch base tile layer (OpenTopoMap / CyclOSM / OSM Standard)
   const handleLayerChange = (layerKey: string) => {
@@ -187,12 +284,12 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
             routeLayers.addLayer(polyline);
 
             const startPopupContent = createStartPopupContent(route, setView);
-            const startMarker = L.marker(route.path[0], { icon: DefaultIcon }).bindPopup(startPopupContent);
+            const startMarker = L.marker(route.path[0], { icon: createStartIcon() }).bindPopup(startPopupContent);
             routeLayers.addLayer(startMarker);
               
             if (route.path.length > 1) {
               const endPopupContent = createEndPopupContent(route, mapRef);
-              const endMarker = L.marker(route.path[route.path.length - 1], { icon: DefaultIcon }).bindPopup(endPopupContent);
+              const endMarker = L.marker(route.path[route.path.length - 1], { icon: createEndIcon() }).bindPopup(endPopupContent);
               routeLayers.addLayer(endMarker);
             }
             
@@ -437,25 +534,38 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         </div>
       )}
 
-      {/* Floating Map Layers Control */}
+      {/* Floating Map Layers & Centering Control */}
       <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] flex flex-col items-end gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setShowLayerMenu(!showLayerMenu)}
-          className="shadow-md bg-card/90 backdrop-blur-sm border border-border gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3"
-          title="Выбрать стиль карты и рельеф"
-        >
-          <Layers className="size-3.5 sm:size-4 text-primary" />
-          <span className="hidden sm:inline font-medium">
-            {MAP_LAYERS[currentLayerId]?.name.split(' ')[0] || 'Слои карты'}
-          </span>
-          {MAP_LAYERS[currentLayerId]?.isTopographic && (
-            <Badge variant="outline" className="px-1 py-0 text-[9px] sm:text-[10px] bg-primary/10 text-primary border-primary/20">
-              DEM
-            </Badge>
-          )}
-        </Button>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={fitToActiveRouteOrHikers}
+            className="shadow-md bg-card/90 backdrop-blur-sm border border-border gap-1.5 text-xs h-8 sm:h-9 px-2 sm:px-3"
+            title="Центрировать на группе или маршруте"
+          >
+            <Navigation className="size-3.5 sm:size-4 text-primary" />
+            <span className="hidden sm:inline font-medium">К маршруту</span>
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowLayerMenu(!showLayerMenu)}
+            className="shadow-md bg-card/90 backdrop-blur-sm border border-border gap-1.5 sm:gap-2 text-xs h-8 sm:h-9 px-2 sm:px-3"
+            title="Выбрать стиль карты и рельеф"
+          >
+            <Layers className="size-3.5 sm:size-4 text-primary" />
+            <span className="hidden sm:inline font-medium">
+              {MAP_LAYERS[currentLayerId]?.name.split(' ')[0] || 'Слои карты'}
+            </span>
+            {MAP_LAYERS[currentLayerId]?.isTopographic && (
+              <Badge variant="outline" className="px-1 py-0 text-[9px] sm:text-[10px] bg-primary/10 text-primary border-primary/20">
+                DEM
+              </Badge>
+            )}
+          </Button>
+        </div>
 
         {showLayerMenu && (
           <div className="w-[calc(100vw-24px)] max-w-xs sm:w-72 p-2.5 sm:p-3 rounded-lg shadow-xl bg-card/95 backdrop-blur-md border border-border space-y-2 animate-in fade-in slide-in-from-top-2 duration-200 right-0">

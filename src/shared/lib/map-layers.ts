@@ -50,5 +50,6 @@ export const createTileLayer = (layerId: keyof typeof MAP_LAYERS = 'opentopomap'
     attribution: config.attribution,
     maxZoom: config.maxZoom,
     subdomains: config.subdomains || ['a', 'b', 'c'],
+    crossOrigin: true,
   });
 };
