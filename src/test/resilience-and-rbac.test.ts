@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { validateAndIncrementVersion, ConcurrencyConflictError, type VersionedEntity } from '@/core/domain/occ';
+import { validateAndIncrementVersion, ConcurrencyConflictError, withOccRetry, type VersionedEntity } from '@/core/domain/occ';
 import { Rbac, ROLE_PERMISSIONS } from '@/core/security/rbac-service';
 import { TransportManager } from '@/core/transport';
 import { ChaosSimulator } from '@/core/transport/chaos-simulator';
@@ -62,6 +62,45 @@ describe('Resilience, OCC, RBAC & Transport Integration Tests', () => {
 
       expect(result.newVersion).toBe(2);
       expect(result.updated.version).toBe(2);
+    });
+
+    it('withOccRetry automatically retries mutation when version conflict is resolved on next fetch', async () => {
+      let currentDbState: VersionedEntity & { title: string } = {
+        id: 'route-caucasus-occ',
+        title: 'Маршрут А',
+        version: 1,
+      };
+
+      let attemptCount = 0;
+      const fetchLatest = vi.fn().mockImplementation(async () => {
+        return { ...currentDbState };
+      });
+
+      const mutate = vi.fn().mockImplementation(async (latest: typeof currentDbState) => {
+        attemptCount++;
+        if (attemptCount === 1) {
+          // Simulate concurrent edit by another user updating DB to version 2
+          currentDbState = { ...currentDbState, title: 'Маршрут А (изменено другим гидом)', version: 2 };
+          // Attempting update with outdated expectedVersion 1 triggers conflict
+          throw new ConcurrencyConflictError(latest.id, 1, 2);
+        }
+        // Second attempt receives latest (version 2) and succeeds with version 3
+        const { updated } = validateAndIncrementVersion(latest, {
+          title: 'Маршрут А (актуализирован)',
+          expectedVersion: latest.version,
+        });
+        currentDbState = updated;
+        return updated;
+      });
+
+      const finalResult = await withOccRetry<typeof currentDbState, typeof currentDbState>(
+        fetchLatest,
+        mutate,
+        { maxRetries: 3, initialDelayMs: 1 }
+      );
+      expect(finalResult.version).toBe(3);
+      expect(finalResult.title).toBe('Маршрут А (актуализирован)');
+      expect(mutate).toHaveBeenCalledTimes(2);
     });
   });
 

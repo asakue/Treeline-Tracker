@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import 'leaflet.markercluster';
 import { useAppContext } from '@/entities/app';
 import { 
   createStartPopupContent, 
@@ -26,6 +27,7 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const overlayControlsRef = useRef<Map<string, L.Control>>(new Map());
   const drawnRoutesRef = useRef<Map<string, L.Layer>>(new Map());
   const drawnHikersRef = useRef<Map<string, L.Layer>>(new Map());
+  const hikerClusterGroupRef = useRef<any>(null);
   const safeRadiusCircleRef = useRef<L.Circle | null>(null);
 
   const [currentLayerId, setCurrentLayerId] = useState<string>('opentopomap');
@@ -53,6 +55,24 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         const initialLayer = createTileLayer('opentopomap');
         initialLayer.addTo(mapInstance);
         activeTileLayerRef.current = initialLayer;
+
+        // Initialize Marker Cluster Group for Hikers (leaflet.markercluster)
+        const clusterGroup = (L as any).markerClusterGroup ? (L as any).markerClusterGroup({
+          maxClusterRadius: 40,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false,
+          iconCreateFunction: (cluster: any) => {
+            const count = cluster.getChildCount();
+            return L.divIcon({
+              html: `<div class="flex items-center justify-center w-8 h-8 rounded-full bg-primary text-primary-foreground font-bold text-xs shadow-lg border-2 border-background ring-2 ring-primary/40">${count}</div>`,
+              className: 'hiker-marker-cluster',
+              iconSize: L.point(32, 32),
+            });
+          },
+        }) : L.layerGroup();
+
+        clusterGroup.addTo(mapInstance);
+        hikerClusterGroupRef.current = clusterGroup;
     }
 
     return () => {
@@ -64,6 +84,16 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         });
         drawnRoutesRef.current.clear();
         drawnHikersRef.current.clear();
+
+        if (hikerClusterGroupRef.current) {
+          if (mapRef.current.hasLayer(hikerClusterGroupRef.current)) {
+            mapRef.current.removeLayer(hikerClusterGroupRef.current);
+          }
+          if (typeof hikerClusterGroupRef.current.clearLayers === 'function') {
+            hikerClusterGroupRef.current.clearLayers();
+          }
+          hikerClusterGroupRef.current = null;
+        }
 
         if (safeRadiusCircleRef.current && mapRef.current) {
           if (mapRef.current.hasLayer(safeRadiusCircleRef.current)) {
@@ -185,14 +215,16 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
     // Remove markers for hikers no longer in the active group
     drawnHikersRef.current.forEach((layer, id) => {
         if (!activeHikerIds.has(id)) {
-            if (map.hasLayer(layer)) {
+            if (hikerClusterGroupRef.current) {
+              hikerClusterGroupRef.current.removeLayer(layer);
+            } else if (map.hasLayer(layer)) {
               map.removeLayer(layer);
             }
             drawnHikersRef.current.delete(id);
         }
     });
 
-    // Add/update markers for hikers in the active group
+    // Add/update markers for hikers in the active group (with clustering)
     activeHikers.forEach(hiker => {
         const coordsStr = hiker.coords;
         const matches = coordsStr.match(/[-+]?\d*\.?\d+/g);
@@ -212,8 +244,13 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
             } else {
                 // Create new marker
                 const marker = L.marker(position, { icon: HikerIcon })
-                    .bindPopup(popupContent)
-                    .addTo(map);
+                    .bindPopup(popupContent);
+                
+                if (hikerClusterGroupRef.current) {
+                  hikerClusterGroupRef.current.addLayer(marker);
+                } else {
+                  marker.addTo(map);
+                }
                 drawnHikersRef.current.set(hiker.id, marker);
             }
           }

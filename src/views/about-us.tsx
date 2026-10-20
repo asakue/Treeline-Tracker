@@ -84,49 +84,31 @@ const perspectives = [
 
 const teamMembers = [
   {
-    id: 'member-dmitry',
-    name: 'Дмитрий',
-    role: 'Автор идеи и полевой эксперт',
-    badge: 'Vision & Safety',
-    initials: 'ДМ',
-    skills: ['Полевая безопасность', 'Концепция продукта', 'Тестирование в горах'],
-    description: 'Инициатор проекта и эксперт по горным походам. Отвечает за проверку надежности технологий в реальных суровых условиях дикой природы.',
-  },
-  {
     id: 'member-daniil',
     name: 'Даниил',
-    role: 'Главный архитектор и ведущий разработчик',
-    badge: 'Lead Architect',
+    role: 'Проект-менеджер и ведущий архитектор',
+    badge: 'PM & Lead Architect',
     initials: 'ДН',
-    skills: ['FSD / Clean Architecture', 'Web Crypto E2EE', 'Gemini AI API', 'Next.js 15'],
-    description: 'Спроектировал модульную архитектуру системы, криптографический контур E2EE, интеграцию с Google Gemini AI и отказоустойчивые репозитории.',
-  },
-  {
-    id: 'member-ilya',
-    name: 'Илья',
-    role: 'Руководитель проекта',
-    badge: 'Project Lead',
-    initials: 'ИЛ',
-    skills: ['Управление бэклогом', 'Стратегия развития', 'Связь с МЧС и сообществами'],
-    description: 'Отвечает за стратегию проекта, координацию этапов разработки, взаимодействие со спасательными службами и туроператорами.',
+    skills: ['Проект-менеджмент', 'Канбан и декомпозиция', 'FSD Архитектура', 'Web Crypto E2EE'],
+    description: 'Координация команды, контроль сроков и задач на Канбан-доске, проектирование системной архитектуры на основе FSD, криптографического контура E2EE и механизмов отказоустойчивости.',
   },
   {
     id: 'member-alexander',
     name: 'Александр',
-    role: 'Разработчик картографии и рельефа',
+    role: 'Разработчик функциональных модулей и картографии',
     badge: 'Core Developer',
     initials: 'АЛ',
-    skills: ['Leaflet & React-Leaflet', 'OpenTopoMap / CyclOSM', 'SRTM DEM Модель'],
-    description: 'Разработал интерактивный модуль маршрутизации, интеграцию слоев рельефа OpenStreetMap и алгоритмы расчета набора/сброса высот.',
+    skills: ['Leaflet & React-Leaflet', 'MarkerCluster', 'OpenTopoMap / CyclOSM', 'SRTM DEM'],
+    description: 'Разработка прикладных функциональных модулей, картографической подсистемы, кластеризации маркеров, высотных профилей DEM и интеграционных сервисов.',
   },
   {
     id: 'member-kirill',
     name: 'Кирилл',
-    role: 'Разработчик клиентских систем и UI',
+    role: 'Разработчик клиент-серверных систем и UI',
     badge: 'Core Developer',
     initials: 'КР',
-    skills: ['Оптимизация производительности', 'Geohashing', 'Адаптивный UI/UX'],
-    description: 'Разработка отзывчивых интерфейсов, фильтрация пространственных гео-запросов и оптимизация энергопотребления в фоновом режиме.',
+    skills: ['Клиентские компоненты', 'Оптимизация производительности', 'Base32 Geohashing', 'Ed25519 & AES-GCM'],
+    description: 'Разработка клиентских и серверных компонентов, адаптивного UI, алгоритмов троттлинга координат, пространственного гео-хеширования и криптозащиты.',
   },
 ];
 
@@ -140,16 +122,16 @@ export default function AboutUs() {
         <div className="relative z-10 max-w-4xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider">
             <HeartHandshake className="size-3.5" />
-            Команда Treeline Tracker
+            Команда Treeline Tracker • Группа ВИС31 (09.03.02)
           </div>
           <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-foreground via-foreground/90 to-muted-foreground">
-            Проект «Дозор»
+            Проект «Treeline Tracker»
           </h1>
           <p className="text-lg md:text-2xl font-medium text-primary">
             Не искать, а предотвращать. Не реагировать на кризис, а не допускать его.
           </p>
           <p className="max-w-2xl mx-auto text-sm md:text-base text-muted-foreground leading-relaxed">
-            Мы создаем интеллектуальную экосистему безопасности для походов любой сложности, объединяя децентрализованную криптографию, спутниковую картографию и искусственный интеллект.
+            Разработка защищённой веб-платформы для координации туристических групп и SAR в рамках дисциплины «Проектный практикум» студентами направления 09.03.02 «Информационные системы и технологии».
           </p>
         </div>
       </header>

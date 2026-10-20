@@ -35,13 +35,13 @@ describe('ProfilePage Component (src/views/profile-page)', () => {
     userId: 'usr-sec-999-alpha',
     publicKey: 'ed25519_pk_mock_test_public_key_abc123',
     privateKey: 'mock_sk_test_private',
-    displayName: 'Дмитрий Соколов',
+    displayName: 'Алексей Соколов',
     createdAt: 1715000000000,
   };
 
   const fullUserProfile: AppUserProfile = {
-    displayName: 'Дмитрий Соколов',
-    email: 'dmitry.sokolov@treeline.org',
+    displayName: 'Алексей Соколов',
+    email: 'alexey.sokolov@treeline.org',
     phone: '+7 (999) 333-22-11',
     emergencyContact: '+7 (999) 777-88-99',
     experienceLevel: 'Expert',
@@ -73,10 +73,10 @@ describe('ProfilePage Component (src/views/profile-page)', () => {
 
       // Verify display name and header
       expect(screen.getByText('Личный кабинет')).toBeInTheDocument();
-      expect(screen.getByText('Дмитрий Соколов')).toBeInTheDocument();
+      expect(screen.getByText('Алексей Соколов')).toBeInTheDocument();
 
       // Verify email
-      expect(screen.getByText('dmitry.sokolov@treeline.org')).toBeInTheDocument();
+      expect(screen.getByText('alexey.sokolov@treeline.org')).toBeInTheDocument();
 
       // Verify phone number
       expect(screen.getByText('+7 (999) 333-22-11')).toBeInTheDocument();
@@ -87,7 +87,7 @@ describe('ProfilePage Component (src/views/profile-page)', () => {
       ).toBeInTheDocument();
 
       // Verify avatar image with correct src and alt
-      const avatarImage = screen.getByAltText('Дмитрий Соколов');
+      const avatarImage = screen.getByAltText('Алексей Соколов');
       expect(avatarImage).toBeInTheDocument();
       expect(avatarImage).toHaveAttribute('src', fullUserProfile.avatarUrl);
 
@@ -124,14 +124,14 @@ describe('ProfilePage Component (src/views/profile-page)', () => {
       const emergencyInput = screen.getByLabelText(/sos контакт/i) as HTMLInputElement;
       const bioInput = screen.getByLabelText(/о себе/i) as HTMLTextAreaElement;
 
-      expect(nameInput.value).toBe('Дмитрий Соколов');
-      expect(emailInput.value).toBe('dmitry.sokolov@treeline.org');
+      expect(nameInput.value).toBe('Алексей Соколов');
+      expect(emailInput.value).toBe('alexey.sokolov@treeline.org');
       expect(phoneInput.value).toBe('+7 (999) 333-22-11');
       expect(emergencyInput.value).toBe('+7 (999) 777-88-99');
       expect(bioInput.value).toBe('Старший координатор спасательных операций и картограф.');
 
       // Update name in form and save
-      fireEvent.change(nameInput, { target: { value: 'Дмитрий С. (Командир)' } });
+      fireEvent.change(nameInput, { target: { value: 'Алексей С. (Командир)' } });
 
       const saveButton = screen.getByRole('button', { name: /сохранить/i });
       fireEvent.click(saveButton);
@@ -139,7 +139,7 @@ describe('ProfilePage Component (src/views/profile-page)', () => {
       await waitFor(() => {
         expect(handleUpdate).toHaveBeenCalledWith(
           expect.objectContaining({
-            displayName: 'Дмитрий С. (Командир)',
+            displayName: 'Алексей С. (Командир)',
           })
         );
       });
@@ -375,7 +375,7 @@ describe('ProfilePage Component (src/views/profile-page)', () => {
       fireEvent.click(rotateButton);
 
       await waitFor(() => {
-        expect(identityManager.rotateLocalIdentity).toHaveBeenCalledWith('Дмитрий Соколов');
+        expect(identityManager.rotateLocalIdentity).toHaveBeenCalledWith('Алексей Соколов');
         expect(screen.getByText('ed25519_pk_mock_rotated_new_key_xyz890')).toBeInTheDocument();
       });
 

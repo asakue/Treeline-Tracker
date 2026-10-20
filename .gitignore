@@ -54,3 +54,8 @@ firestore-debug.log
 id_rsa*
 id_ed25519*
 secrets.json
+
+# Antigravity agent skills
+.agent
+.agents/
+

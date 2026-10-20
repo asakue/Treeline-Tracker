@@ -61,6 +61,16 @@ class ChaosSimulatorService {
     this.listeners.forEach((l) => l(this.config));
   }
 
+  public resetToNormal() {
+    this.updateConfig({
+      forceOfflineInternet: false,
+      forceOfflineMesh: false,
+      packetDropRate: 0,
+      latencyMs: 150,
+      batteryOverride: null,
+    });
+  }
+
   public shouldDropPacket(): boolean {
     if (this.config.packetDropRate <= 0) return false;
     const drop = Math.random() < this.config.packetDropRate;

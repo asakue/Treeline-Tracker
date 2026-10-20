@@ -199,7 +199,7 @@ describe('Location Tracking, Deadband, Geofencing & Offline Queue Tests', () => 
 
     it('reports BREACH when hiker exceeds safe radius (> 500m)', () => {
       // ~1.2 km away
-      const hikerPos = { latitude: 43.365, longitude: 42.449, name: 'Дмитрий' };
+      const hikerPos = { latitude: 43.365, longitude: 42.449, name: 'Алексей' };
       const evaluation = LocationFilter.evaluateGeofence(hikerPos, leaderPos, safeRadiusMeters);
 
       expect(evaluation.status).toBe('BREACH');

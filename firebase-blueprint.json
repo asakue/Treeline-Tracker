@@ -25,6 +25,8 @@
         "guideId": { "type": "string", "description": "UID of the group leader/guide" },
         "memberIds": { "type": "array", "description": "List of hiker UIDs in the group" },
         "routeId": { "type": "string", "description": "Assigned route ID" },
+        "safeRadiusMeters": { "type": "number", "description": "Safe geofence radius around leader in meters" },
+        "version": { "type": "number", "description": "OCC concurrency revision counter" },
         "status": { "type": "string", "enum": ["planned", "active", "completed", "emergency"], "description": "Current group status" },
         "currentSector": { "type": "string", "description": "Active mountain sector" },
         "updatedAt": { "type": "string", "description": "Last updated timestamp" }
@@ -33,7 +35,7 @@
     },
     "Telemetry": {
       "title": "Telemetry",
-      "description": "Hiker real-time GPS coordinate telemetry with geohash",
+      "description": "Hiker real-time GPS coordinate telemetry with geohash and Zero-Knowledge E2EE support",
       "type": "object",
       "properties": {
         "userId": { "type": "string", "description": "Author UID" },
@@ -44,9 +46,14 @@
         "batteryLevel": { "type": "number", "description": "Battery percentage 0-100" },
         "speed": { "type": "number", "description": "Speed in m/s" },
         "geohash": { "type": "string", "maxLength": 12, "description": "Geohash spatial index" },
+        "isEncrypted": { "type": "boolean", "description": "Zero-Knowledge E2EE encrypted payload indicator" },
+        "ciphertext": { "type": "string", "description": "AES-256-GCM AEAD encrypted payload (Base64)" },
+        "iv": { "type": "string", "description": "12-byte initialization vector" },
+        "authTag": { "type": "string", "description": "16-byte authentication tag" },
+        "signature": { "type": "string", "description": "Ed25519 digital signature" },
         "timestamp": { "type": "string", "description": "Server or device timestamp" }
       },
-      "required": ["userId", "latitude", "longitude"]
+      "required": ["userId"]
     },
     "Route": {
       "title": "Route",

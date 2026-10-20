@@ -22,7 +22,7 @@ graph TD
     Cloud[("Облачный бэкенд / Firebase Firestore")]
     MeshNode[("Симулированный узел MeshCore LoRa")]
     MockGateway["Симулированный шлюз спасателей 112"]
-    GeminiAI["Google Gemini 3.8 Flash AI Model"]
+    GeminiAI["Google Gemini 2.5 Flash AI Model"]
     BRouterEngine["BRouter Hiking Routing Service"]
     DEMService["Open-Elevation DEM Service"]
 

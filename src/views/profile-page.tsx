@@ -43,7 +43,15 @@ import {
   User,
   Lock,
   Phone,
+  Compass,
+  Siren,
+  Mountain,
+  ShieldAlert,
+  Sparkles,
+  XCircle,
+  ExternalLink,
 } from 'lucide-react';
+import { Badge } from '@/shared/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs';
 import { Separator } from '@/shared/ui/separator';
 import { Label } from '@/shared/ui/label';
@@ -425,7 +433,7 @@ export function ProfilePage({ profile, onUpdateProfile }: ProfilePageProps = {})
       </div>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList className="grid w-full sm:w-[380px] grid-cols-2 p-1 bg-muted/80 border border-border/60">
+        <TabsList className="grid w-full sm:w-[400px] grid-cols-2 p-1 bg-muted/80 border border-border/60">
           <TabsTrigger value="profile" className="flex items-center gap-2 text-xs sm:text-sm font-medium">
             <User className="size-4" />
             Профиль

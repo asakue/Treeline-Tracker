@@ -4,6 +4,43 @@ All notable changes to the **Treeline Tracker** project are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.3] - 2026-10-20
+
+### Added
+- **RBAC Permissions Matrix & Declarative Components**:
+  - Defined granular atomic permissions (`Permission`) and role matrix (`ROLE_PERMISSIONS`) in `src/shared/config/permissions.ts`.
+  - Implemented `<Can>` declarative guard component and `usePermissions` hook in `src/shared/lib/permissions/`.
+  - Edge Middleware in `src/middleware.ts` for workspace route protection and role verification.
+  - Server Action `updateUserRoleAction` with Optimistic Concurrency Control (`version: number`) and Custom Claims synchronization.
+  - Firestore Security Rules strictly preventing client-side role modifications.
+- **Dedicated Role Workspaces (`src/app/(workspace)/`)**:
+  - **Hiker Workspace (`/hiker`)**: Fullscreen outdoor map, 3-second hold SOS button with circular SVG progress & vibration feedback, floating status bar (battery, GPS accuracy, E2EE stealth, IndexedDB queue), distance & azimuth arrow to guide.
+  - **Guide Workspace (`/guide`)**: Route map with GPX trail & participant clusters, Roster Drawer with live telemetry and `safeRadiusMeters` setting, breach warning banner, Recharts elevation profile with pace & ETA, and E2EE key distribution modal with dynamic QR code.
+  - **Rescuer SAR Workspace (`/rescuer`)**: Tactical dark command monitor with radio coverage overlays, emergency SOS feed with 2-hour breadcrumbs track, AI SAR polygon calculation powered by Gemini 2.5 Flash, and LoRa Mesh 868MHz radio gateway monitor.
+  - **Admin Workspace (`/admin`)**: Operations dashboard, user management table with OCC edit modal, real-time audit log with JSON export, Chaos failure simulator, and sub-routes `/admin/users` and `/admin/audit`.
+
+## [0.5.2] - 2026-10-20
+
+### Added
+- **Interactive Marker Clustering on Map (`leaflet.markercluster`)**:
+  - Integrated `leaflet.markercluster` into `MapView` with custom themed cluster icons (`.hiker-marker-cluster`).
+  - Added marker clustering CSS stylesheets to global CSS styles (`globals.css`).
+  - Auto-spiderfy and smooth zoom-out cluster aggregation for large hiking expeditions.
+- **OCC Auto-Retry Engine (`withOccRetry`)**:
+  - Implemented `withOccRetry` helper in `src/core/domain/occ.ts` with exponential backoff and configurable retry limits.
+  - Added comprehensive integration tests in `src/test/resilience-and-rbac.test.ts`.
+- **Zod Schema Validation for SAR AI (`SearchAreaInputSchema`, `SearchAreaOutputSchema`)**:
+  - Added runtime Zod validation for search-areas API route payload and AI polygon response.
+  - Added `src/ai/dev.ts` developer UI entrypoint for Genkit CLI (`npm run genkit:dev`).
+  - Synchronized AI model standard to `gemini-2.5-flash`.
+- **Pre-commit Automation**:
+  - Added `"hooks:install"` script to `package.json` for seamless pre-commit hook initialization.
+
+### Changed
+- **Team Roster Synchronization**:
+  - Updated project documentation and application views (`AboutUs`, `AboutApp`) to represent the core team of 3 developers (Daniil, Alexander, Kirill) from group VIS31 (09.03.02 "Information Systems and Technologies").
+  - Removed outdated references to Dmitry and Ilya from team rosters and architectural documents.
+
 ## [0.5.1] - 2026-10-15
 
 ### Added

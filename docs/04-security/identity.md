@@ -50,7 +50,7 @@ export interface UserAccount {
   uid: string;                         // Уникальный идентификатор аккаунта
   email: string | null;                // Email адрес (null для анонимных пользователей)
   emailVerified: boolean;              // Флаг верификации почты
-  displayName: string;                 // Отображаемое имя ("Дмитрий", "Даниил")
+  displayName: string;                 // Отображаемое имя ("Даниил", "Александр")
   photoURL: string | null;             // Ссылка на аватар
   phoneNumber?: string;                // Телефон для экстренной связи / 2FA
   providerId: AuthProviderType;        // Основной провайдер аутентификации

@@ -1,5 +1,18 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+
+const SearchAreaInputSchema = z.object({
+  lastKnownLocation: z.string().min(1, 'Все поля обязательны для заполнения'),
+  weatherConditions: z.string().min(1, 'Все поля обязательны для заполнения'),
+  plannedRoute: z.string().min(1, 'Все поля обязательны для заполнения'),
+});
+
+const SearchAreaOutputSchema = z.object({
+  suggestedSearchAreas: z.string().min(1),
+  confidenceLevel: z.string().min(1),
+  searchAreaPolygon: z.array(z.tuple([z.number(), z.number()])).min(3),
+});
 
 function getFallbackResponse(input: { lastKnownLocation: string; weatherConditions: string; plannedRoute: string }) {
   const coordsMatches = input.lastKnownLocation.match(/[-+]?\d*\.?\d+/g);
@@ -38,14 +51,19 @@ function getFallbackResponse(input: { lastKnownLocation: string; weatherConditio
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { lastKnownLocation, weatherConditions, plannedRoute } = body;
+    const inputValidation = SearchAreaInputSchema.safeParse(body);
 
-    if (!lastKnownLocation || !weatherConditions || !plannedRoute) {
+    if (!inputValidation.success) {
       return NextResponse.json(
-        { success: false, error: 'Все поля обязательны для заполнения' },
+        { 
+          success: false, 
+          error: inputValidation.error.errors[0]?.message || 'Все поля обязательны для заполнения' 
+        },
         { status: 400 }
       );
     }
+
+    const { lastKnownLocation, weatherConditions, plannedRoute } = inputValidation.data;
 
     if (!process.env.GEMINI_API_KEY) {
       const fallback = getFallbackResponse({ lastKnownLocation, weatherConditions, plannedRoute });
@@ -114,7 +132,10 @@ export async function POST(req: NextRequest) {
 
     if (response.text) {
       const parsed = JSON.parse(response.text.trim());
-      return NextResponse.json({ success: true, data: parsed });
+      const validatedOutput = SearchAreaOutputSchema.safeParse(parsed);
+      if (validatedOutput.success) {
+        return NextResponse.json({ success: true, data: validatedOutput.data });
+      }
     }
 
     const fallback = getFallbackResponse({ lastKnownLocation, weatherConditions, plannedRoute });

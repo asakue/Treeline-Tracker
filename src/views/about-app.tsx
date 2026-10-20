@@ -56,8 +56,8 @@ const coreCapabilities = [
   {
     icon: Bot,
     title: 'Поиск пропавших с Gemini AI',
-    badge: 'Google Gemini 3.8 Flash',
-    description: 'Интеллектуальный расчет наиболее вероятных секторов поиска туриста на базе погодных условий, опыта и топографии местности.',
+    badge: 'Gemini 2.5 Flash',
+    description: 'Интеллектуальный расчет наиболее вероятных секторов поиска туриста на базе погодных условий, опыта, рельефа и Zod-схем.',
   },
   {
     icon: Activity,
@@ -76,8 +76,8 @@ const coreCapabilities = [
 const techStack = [
   { name: 'Next.js 15 (App Router)', category: 'Frontend / Fullstack', description: 'Современный React-фреймворк со standalone-сборкой и API роутами.' },
   { name: 'React 18 & TypeScript 5', category: 'Ядро и Типизация', description: 'Строгая типизация всех слоев предметной области и UI-компонентов.' },
-  { name: 'Google Gemini 3.8 Flash', category: 'Искусственный интеллект', description: 'Серверная генерация секторов поиска пропавших и анализ геометрии полигонов.' },
-  { name: 'Leaflet & React-Leaflet', category: 'Картография', description: 'Высокопроизводительный движок интерактивных карт с кастомными слоями.' },
+  { name: 'Google Gemini 2.5 Flash & Genkit', category: 'Искусственный интеллект', description: 'Серверная генерация секторов поиска пропавших (SAR), Zod-валидация и аудит.' },
+  { name: 'Leaflet, React-Leaflet & MarkerCluster', category: 'Картография', description: 'Интерактивные карты с кластеризацией участников (leaflet.markercluster).' },
   { name: 'OpenTopoMap & CyclOSM', category: 'Топо-слои', description: 'Карты с изолиниями высот, рельефом и горной классификацией троп.' },
   { name: 'BRouter Routing Engine', category: 'Навигация', description: 'Оптимизированный пешеходный алгоритм прокладки треков по тропам.' },
   { name: 'Open-Elevation DEM API', category: 'Высотный профиль', description: 'Цифровая модель рельефа SRTM для расчета профиля и набора высоты.' },
@@ -85,30 +85,32 @@ const techStack = [
   { name: 'Tailwind CSS & shadcn/ui', category: 'Интерфейс', description: 'Адаптивный дизайн, поддержка светлой и темной тем, доступность WCAG.' },
   { name: 'Recharts', category: 'Визуализация', description: 'Интерактивные графики перепада высот и профиля маршрута.' },
   { name: 'Vitest & Testing Library', category: 'Тестирование', description: 'Комплексные юнит- и интеграционные тесты криптографии и компонентов.' },
-  { name: 'Firebase Firestore & Auth', category: 'Хранилище / Синхронизация', description: 'Real-time синхронизация данных групп и ролевая безопасность (RBAC).' },
+  { name: 'Firebase Firestore & Auth', category: 'Хранилище / Синхронизация', description: 'Real-time синхронизация данных групп, persistentLocalCache и RBAC/MFA.' },
 ];
 
 const projectStructure = `
 treeline-tracker/
 ├── docs/                        # Полная архитектурная и продуктовая документация
-│   ├── 01-product/              # Концепция, персоны, Use Cases (UC-01..10)
-│   ├── 02-requirements/         # Функциональные (FR) и нефункциональные (NFR)
+│   ├── 01-product/              # Концепция, персоны, Use Cases (UC-01..10), команда ВИС31
+│   ├── 02-requirements/         # Функциональные (FR-001..025) и нефункциональные (NFR)
 │   ├── 03-architecture/         # C4-модель, UML Class Diagram, ADR-решения
 │   ├── 04-security/             # E2EE, Ed25519, threat-model, privacy policy
 │   └── 05-mesh/                 # Спецификация и симуляция протокола MeshCore
 ├── src/
 │   ├── app/                     # Next.js 15 App Router и API эндпоинты (/api/*)
-│   │   ├── api/search-areas/    # Серверный Gemini 3.8 Flash AI эндпоинт
+│   │   ├── api/search-areas/    # Серверный Gemini 2.5 Flash AI эндпоинт (Zod validation)
 │   │   ├── api/routes/          # CRUD операции с маршрутами
 │   │   └── api/emergency/       # Обработка экстренных сигналов бедствия SOS
 │   ├── views/                   # Полноэкранные представления (MapView, Profile, Tracker, etc.)
 │   ├── features/                # Функциональные модули (Hiker Search, Route Drawing, SOS)
 │   ├── entities/                # Доменные модели данных и контексты (App, Group, Route, Hiker)
 │   ├── core/                    # Чистая предметная область и криптографическое ядро
-│   │   ├── domain/              # Сущности (GeoCoordinate, HikerLocation, Route, Group)
-│   │   ├── repositories/        # Интерфейсы репозиториев и LocalStorage драйверы
-│   │   ├── security/            # CryptoService, IdentityManager, PrivacyFilter
+│   │   ├── domain/              # Сущности и OCC engine (validateAndIncrementVersion, withOccRetry)
+│   │   ├── location/            # LocationFilter (Deadband, Throttle, Geofence, Base32 Geohash)
+│   │   ├── transport/           # TransportManager, OfflineQueue, IndexedDB, ChaosSimulator
+│   │   ├── security/            # CryptoService, IdentityManager, PrivacyFilter, RBAC
 │   │   └── utils/               # GPX Exporter, конвертеры координат
+│   ├── ai/                      # Genkit конфигурация и флоу ИИ поиска (dev.ts)
 │   └── shared/                  # Переиспользуемые UI-компоненты (shadcn), утилиты и хуки
 ├── public/                      # Статические файлы, иконки, манифест, update.md
 ├── package.json                 # Зависимости и скрипты
@@ -120,9 +122,11 @@ const scripts = [
   { command: 'npm run build', description: 'Production-сборка приложения с оптимизацией standalone.' },
   { command: 'npm run start', description: 'Запуск собранного production-сервера.' },
   { command: 'npm run lint', description: 'Статическая проверка кода линтером ESLint 9.' },
-  { command: 'npm test', description: 'Запуск полного сьюта автоматических тестов Vitest.' },
-  { command: 'npm run typecheck', description: 'Проверка типов TypeScript без генерации файлов.' },
+  { command: 'npm test', description: 'Запуск полного сьюта автоматических тестов Vitest (57+ тестов).' },
+  { command: 'npm run typecheck', description: 'Строгая проверка типов TypeScript (tsc --noEmit).' },
   { command: 'npm run security:scan', description: 'Сканирование кодовой базы на отсутствие секретов и ключей.' },
+  { command: 'npm run hooks:install', description: 'Настройка локальных pre-commit Git-хуков (.githooks/pre-commit).' },
+  { command: 'npm run genkit:dev', description: 'Запуск локальной консоли разработчика Genkit UI (src/ai/dev.ts).' },
 ];
 
 export default function AboutApp() {
@@ -151,7 +155,7 @@ export default function AboutApp() {
         <section className="text-center space-y-4 pt-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider">
             <Compass className="size-3.5" />
-            Версия 0.5.0 Production Ready
+            Версия 0.5.2 • ВИС31 (09.03.02)
           </div>
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-foreground via-primary to-foreground">
             О приложении Treeline Tracker

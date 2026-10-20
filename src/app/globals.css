@@ -3,11 +3,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@import 'leaflet.markercluster/dist/MarkerCluster.css';
+@import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+
 .leaflet-container {
   height: 100%;
   width: 100%;
   z-index: 1;
 }
+
+.hiker-marker-cluster {
+  background: transparent;
+  border: none;
+}
+
 
 @layer base {
   :root {

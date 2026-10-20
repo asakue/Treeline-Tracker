@@ -499,7 +499,7 @@ export default function AnalyticsView() {
             },
             {
               id: 'demo-h3',
-              name: 'Дмитрий Попов',
+              name: 'Алексей Попов',
               role: 'MEMBER',
               status: 'В лагере',
               battery: 76,
