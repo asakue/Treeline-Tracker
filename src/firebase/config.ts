@@ -1,3 +1,6 @@
-// This file is intentionally left blank.
-// The Firebase config will be populated by a specialized tool.
-export const firebaseConfig = {};
+/**
+ * @fileoverview Re-export Firebase config from shared config
+ */
+
+export * from '@/shared/config/firebase-config';
+export { default } from '@/shared/config/firebase-config';

@@ -2,6 +2,16 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # Compute settings for Next.js SSR / Server Actions / API Routes
+  maxInstances: 2
+  minInstances: 0
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  # Map environmental variables and Google Secret Manager secrets
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: treeline-tracker
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY

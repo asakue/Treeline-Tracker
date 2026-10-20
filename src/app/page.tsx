@@ -11,6 +11,11 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize Firebase client & persistent Cloud Firestore cache
+    import('@/firebase').then(({ initializeFirebase }) => {
+      initializeFirebase();
+    }).catch((err) => console.warn('[Firebase] Client bootstrap skipped:', err));
+
     try {
       if (sessionStorage.getItem(PRELOADER_KEY)) {
         setLoading(false);

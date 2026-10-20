@@ -9,19 +9,25 @@ import {
   getFirestore,
   type Firestore,
 } from 'firebase/firestore';
-import { firebaseConfig } from './config';
+import { firebaseConfig, isFirebaseConfigured } from './config';
 
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let firestore: Firestore | undefined;
 
 export function initializeFirebase() {
-  if (!firebaseConfig) {
-    throw new Error('Firebase config not found');
+  if (!isFirebaseConfigured()) {
+    // When Firebase credentials are not yet configured in .env, operate in offline/local fallback
+    return {
+      app: undefined,
+      auth: undefined,
+      firestore: undefined,
+      isConfigured: false,
+    };
   }
 
   try {
-    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig as any);
     auth = getAuth(app);
 
     // Initialize Cloud Firestore with persistent local cache (IndexedDB multi-tab)
@@ -41,14 +47,22 @@ export function initializeFirebase() {
       firestore = getFirestore(app);
     }
   } catch (e) {
-    console.error('Failed to initialize Firebase', e);
+    console.warn('[Firebase] Initialization warning:', e);
   }
 
   return {
     app,
     auth,
     firestore,
+    isConfigured: Boolean(app && firestore),
   };
 }
 
+export function getFirestoreInstance(): Firestore | null {
+  if (firestore) return firestore;
+  const res = initializeFirebase();
+  return res.firestore || null;
+}
+
 export * from './provider';
+export { isFirebaseConfigured };
