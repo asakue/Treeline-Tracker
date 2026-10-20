@@ -127,3 +127,55 @@ export const UserIdentitySchema = z.object({
   createdAt: z.number().positive(),
 });
 
+export const CrossTrackEvaluationSchema = z.object({
+  crossTrackDistanceMeters: z.number().nonnegative(),
+  nearestPoint: z.tuple([z.number(), z.number()]),
+  segmentIndex: z.number().int().nonnegative(),
+  side: z.enum(['LEFT', 'RIGHT', 'ON_TRACK']),
+  isOffTrack: z.boolean(),
+  progressMeters: z.number().nonnegative(),
+  progressPercentage: z.number().min(0).max(100),
+  remainingMeters: z.number().nonnegative(),
+});
+
+export const DirectionEvaluationSchema = z.object({
+  routeBearingDeg: z.number().min(0).max(360),
+  hikerBearingDeg: z.number().min(0).max(360),
+  bearingDeltaDeg: z.number().min(0).max(180),
+  directionStatus: z.enum(['ALIGNED', 'PERPENDICULAR', 'REVERSE']),
+  isMovingBackwards: z.boolean(),
+  confidence: z.number().min(0).max(1),
+});
+
+export const DebouncedGeofenceEvaluationSchema = z.object({
+  status: z.enum(['INSIDE', 'WARNING', 'BREACH']),
+  distanceMeters: z.number().nonnegative(),
+  safeRadiusMeters: z.number().positive(),
+  deviationMeters: z.number(),
+  message: z.string(),
+  isConfirmed: z.boolean(),
+  consecutiveBreachCount: z.number().int().nonnegative(),
+  smoothedDistanceMeters: z.number().nonnegative(),
+  flappingDetected: z.boolean(),
+});
+
+export const NavigationEvaluationRequestSchema = z.object({
+  hikerLocation: z.object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+    altitude: z.number().optional(),
+    speed: z.number().nonnegative().optional(),
+    heading: z.number().min(0).max(360).optional(),
+    name: z.string().optional(),
+    hikerId: z.string().optional(),
+  }),
+  routePath: z.array(z.tuple([z.number().min(-90).max(90), z.number().min(-180).max(180)])).optional(),
+  anchorLocation: z.object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+  }).optional(),
+  safeRadiusMeters: z.number().positive().optional().default(500),
+  corridorWidthMeters: z.number().positive().optional().default(50),
+  isEmergency: z.boolean().optional().default(false),
+});
+

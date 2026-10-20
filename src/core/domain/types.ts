@@ -140,4 +140,44 @@ export interface UserIdentity {
   role?: UserRole;
 }
 
+export interface CrossTrackEvaluation {
+  crossTrackDistanceMeters: number; // Кратчайшее перпендикулярное расстояние до нитки трека
+  nearestPoint: [number, number];   // Ближайшая точка проекции на трек [lat, lng]
+  segmentIndex: number;            // Индекс ближайшего сегмента [i, i+1]
+  side: 'LEFT' | 'RIGHT' | 'ON_TRACK'; // Сторона отклонения по ходу движения маршрута
+  isOffTrack: boolean;             // Превышен ли допустимый коридор безопасности (по умолчанию 50м)
+  progressMeters: number;          // Пройденное расстояние вдоль трека до проекции
+  progressPercentage: number;      // 0..100%
+  remainingMeters: number;         // Оставшееся расстояние до конца маршрута
+}
+
+export interface DirectionEvaluation {
+  routeBearingDeg: number;         // Азимут текущего сегмента маршрута (0..360°)
+  hikerBearingDeg: number;         // Азимут движения туриста (0..360°)
+  bearingDeltaDeg: number;         // Модуль угловой разности (0..180°)
+  directionStatus: 'ALIGNED' | 'PERPENDICULAR' | 'REVERSE'; // REVERSE при дельте > 120°
+  isMovingBackwards: boolean;      // True, если турист движется вспять против направления маршрута
+  confidence: number;              // 0..1 (достоверность на основе скорости и вектора)
+}
+
+export interface DebouncedGeofenceEvaluation {
+  status: 'INSIDE' | 'WARNING' | 'BREACH';
+  distanceMeters: number;
+  safeRadiusMeters: number;
+  deviationMeters: number;
+  message: string;
+  isConfirmed: boolean;            // Подтверждено ли скользящим окном
+  consecutiveBreachCount: number;  // Количество последовательных точек вне зоны
+  smoothedDistanceMeters: number;  // Сглаженное расстояние
+  flappingDetected: boolean;       // Детекция нестабильности/осцилляции GPS
+}
+
+export interface RouteNavigationAnalysis {
+  crossTrack: CrossTrackEvaluation;
+  direction: DirectionEvaluation;
+  estimatedRemainingMinutes: number;
+  currentPaceKmH: number;
+  alerts: string[];
+}
+
 

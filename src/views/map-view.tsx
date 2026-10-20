@@ -19,7 +19,15 @@ import { Layers, Mountain, Navigation, Map as MapIcon, ShieldCheck, Lock, Users,
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import type { Group } from '@/entities/group';
-import { LocationFilter, type GeofenceEvaluation } from '@/core/location';
+import { 
+  calculateCrossTrackDistance, 
+  calculateBearing, 
+  evaluateMovementDirection 
+} from '@/entities/route';
+import { 
+  GeofenceDebouncer, 
+  type DebouncedGeofenceEvaluation 
+} from '@/core/location';
 
 export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -32,10 +40,11 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
   const hikerClusterGroupRef = useRef<any>(null);
   const safeRadiusCircleRef = useRef<L.Circle | null>(null);
   const hasFittedBoundsRef = useRef<boolean>(false);
+  const debouncerRef = useRef<GeofenceDebouncer>(new GeofenceDebouncer({ windowSize: 3, hysteresisMeters: 15 }));
 
   const [currentLayerId, setCurrentLayerId] = useState<string>('opentopomap');
   const [showLayerMenu, setShowLayerMenu] = useState<boolean>(false);
-  const [activeGeofenceBreaches, setActiveGeofenceBreaches] = useState<GeofenceEvaluation[]>([]);
+  const [activeGeofenceBreaches, setActiveGeofenceBreaches] = useState<DebouncedGeofenceEvaluation[]>([]);
 
   const { setView, mapOverlays, removeMapOverlay, activeGroupId, groupsHook, routesHook } = useAppContext();
   const routes = routesHook?.routes || [];
@@ -321,6 +330,8 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         }
     });
 
+    const activeRoute = routes.find(r => r.id === activeGroup?.routeId);
+
     // Add/update markers for hikers in the active group (with clustering)
     activeHikers.forEach(hiker => {
         const coordsStr = hiker.coords;
@@ -331,7 +342,21 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
 
           if (!isNaN(lat) && !isNaN(lon)) {
             const position: [number, number] = [lat, lon];
-            const popupContent = createHikerPopupContent(hiker, activeGroup as Group, setView);
+
+            // Навигационный анализ (XTD + движение вспять)
+            let navInfo: { crossTrack?: any; direction?: any } | undefined;
+            if (activeRoute?.path && activeRoute.path.length > 0) {
+              const xtd = calculateCrossTrackDistance(position, activeRoute.path, 50);
+              let dir: any;
+              if (hiker.lastLocation?.heading !== undefined && activeRoute.path.length >= 2) {
+                const segIdx = Math.min(xtd.segmentIndex, activeRoute.path.length - 2);
+                const segBearing = calculateBearing(activeRoute.path[segIdx], activeRoute.path[segIdx + 1]);
+                dir = evaluateMovementDirection(hiker.lastLocation.heading, segBearing, hiker.lastLocation.speed ?? 0);
+              }
+              navInfo = { crossTrack: xtd, direction: dir };
+            }
+
+            const popupContent = createHikerPopupContent(hiker, activeGroup as Group, setView, navInfo);
 
             if (drawnHikersRef.current.has(hiker.id)) {
                 // Update existing marker
@@ -354,10 +379,10 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         }
     });
 
-    // Handle Geofence Safe Radius (FR-002, UC-02)
+    // Handle Geofence Safe Radius (FR-002, UC-02) с подавлением ложных скачков (Debouncer)
     const leaderHiker = activeHikers.find((h) => h.role === 'LEADER' || h.role === 'GUIDE') || activeHikers[0];
     const safeRadius = activeGroup?.safeRadiusMeters || 500;
-    const breaches: GeofenceEvaluation[] = [];
+    const breaches: DebouncedGeofenceEvaluation[] = [];
 
     if (leaderHiker && leaderHiker.coords) {
       const leaderMatches = leaderHiker.coords.match(/[-+]?\d*\.?\d+/g);
@@ -366,7 +391,7 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
         const leaderLng = parseFloat(leaderMatches[1]);
 
         if (!isNaN(leaderLat) && !isNaN(leaderLng)) {
-          // Check other hikers against leader position
+          // Check other hikers against leader position using debouncer
           activeHikers.forEach((hiker) => {
             if (hiker.id !== leaderHiker.id && hiker.coords) {
               const hMatch = hiker.coords.match(/[-+]?\d*\.?\d+/g);
@@ -374,12 +399,20 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
                 const hLat = parseFloat(hMatch[0]);
                 const hLng = parseFloat(hMatch[1]);
                 if (!isNaN(hLat) && !isNaN(hLng)) {
-                  const evalRes = LocationFilter.evaluateGeofence(
-                    { latitude: hLat, longitude: hLng, name: hiker.name },
+                  const evalRes = debouncerRef.current.evaluate(
+                    hiker.id,
+                    { 
+                      latitude: hLat, 
+                      longitude: hLng, 
+                      name: hiker.name,
+                      timestamp: hiker.lastLocation?.timestamp,
+                    },
                     { latitude: leaderLat, longitude: leaderLng },
-                    safeRadius
+                    safeRadius,
+                    hiker.status === 'SOS'
                   );
-                  if (evalRes.status === 'BREACH') {
+                  // Оповещение только при подтвержденном выходе из зоны
+                  if (evalRes.status === 'BREACH' && evalRes.isConfirmed) {
                     breaches.push(evalRes);
                   }
                 }

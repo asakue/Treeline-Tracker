@@ -88,9 +88,13 @@ export const createEndPopupContent = (route: Route, mapRef: React.MutableRefObje
 export const createHikerPopupContent = (
   hiker: Hiker,
   group: Group,
-  setView: (view: View, props?: any) => void
+  setView: (view: View, props?: any) => void,
+  navigationInfo?: {
+    crossTrack?: import('@/core/domain/types').CrossTrackEvaluation;
+    direction?: import('@/core/domain/types').DirectionEvaluation;
+  }
 ) => {
-  const container = L.DomUtil.create('div', 'space-y-1.5 min-w-[180px]');
+  const container = L.DomUtil.create('div', 'space-y-1.5 min-w-[200px]');
   
   const headerDiv = L.DomUtil.create('div', 'flex items-center justify-between gap-2 border-b pb-1', container);
   const title = L.DomUtil.create('div', 'font-bold text-base text-gray-900', headerDiv);
@@ -108,6 +112,24 @@ export const createHikerPopupContent = (
     ? 'Вне эфира (Stealth)' 
     : 'Точные GNSS (~5м)';
   L.DomUtil.create('div', 'text-xs text-gray-700', container).innerText = `Приватность: ${privacyText}`;
+
+  // Навигационные метрики (Cross-Track Distance & Wrong-Way Detection)
+  if (navigationInfo?.crossTrack) {
+    const xtd = navigationInfo.crossTrack;
+    if (xtd.isOffTrack) {
+      const sideText = xtd.side === 'LEFT' ? 'влево' : xtd.side === 'RIGHT' ? 'вправо' : '';
+      const xtdDiv = L.DomUtil.create('div', 'text-xs font-semibold text-amber-700 bg-amber-50 p-1 rounded border border-amber-200', container);
+      xtdDiv.innerText = `⚠️ Сход с трека: ${Math.round(xtd.crossTrackDistanceMeters)} м ${sideText}`;
+    } else {
+      const progDiv = L.DomUtil.create('div', 'text-xs text-emerald-700 font-medium', container);
+      progDiv.innerText = `Маршрут: ${xtd.progressPercentage}% (ост. ${(xtd.remainingMeters / 1000).toFixed(1)} км)`;
+    }
+  }
+
+  if (navigationInfo?.direction?.isMovingBackwards && navigationInfo.direction.confidence > 0.3) {
+    const revDiv = L.DomUtil.create('div', 'text-xs font-semibold text-rose-700 bg-rose-50 p-1 rounded border border-rose-200', container);
+    revDiv.innerText = `⚠️ Движение вспять (против нитки)`;
+  }
 
   L.DomUtil.create('div', 'text-xs text-gray-700', container).innerText = `Батарея: ${hiker.battery}%`;
   L.DomUtil.create('div', 'text-[11px] text-gray-500', container).innerText = `Обновлено: ${hiker.lastUpdate}`;
