@@ -542,17 +542,31 @@ export default function MapView({ centerOn }: { centerOn?: [number, number] }) {
 
       {/* Floating Active Group & Security Indicator */}
       {activeGroup && (
-        <div className="absolute top-3 left-12 sm:top-4 sm:left-14 z-[1000] flex items-center gap-1.5 sm:gap-2 bg-card/90 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border shadow-md max-w-[170px] sm:max-w-[240px]">
+        <div 
+          className="absolute top-3 left-12 sm:top-4 sm:left-14 z-[1000] flex items-center gap-1.5 sm:gap-2 bg-card/90 backdrop-blur-md px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-border shadow-md max-w-[calc(100vw-140px)] sm:max-w-none transition-all"
+          title={`Активная группа: ${activeGroup.name} (Безопасная зона: ${activeGroup.safeRadiusMeters || 500}м, E2EE активно)`}
+        >
           <Users className="size-3.5 sm:size-4 text-primary shrink-0" />
-          <span className="text-xs font-semibold text-foreground truncate">{activeGroup.name}</span>
-          <span className="text-muted-foreground hidden sm:inline">•</span>
-          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
+          <span 
+            className="text-xs font-semibold text-foreground truncate max-w-[120px] xs:max-w-[180px] sm:max-w-[280px] md:max-w-[400px]"
+            title={activeGroup.name}
+          >
+            {activeGroup.name}
+          </span>
+          <span className="text-muted-foreground/60 shrink-0 select-none">•</span>
+          <span 
+            className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0"
+            title="Сквозное E2EE-шифрование сообщений и координат активно"
+          >
             <ShieldCheck className="size-3 sm:size-3.5 text-emerald-500" />
             E2EE
           </span>
-          <span className="text-muted-foreground hidden sm:inline">•</span>
-          <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-primary font-medium shrink-0">
-            Зона: {activeGroup.safeRadiusMeters || 500}м
+          <span className="text-muted-foreground/60 shrink-0 select-none">•</span>
+          <span 
+            className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-primary font-medium shrink-0"
+            title={`Радиус геозоны безопасности группы: ${activeGroup.safeRadiusMeters || 500}м`}
+          >
+            <span className="hidden xs:inline">Зона:</span> {activeGroup.safeRadiusMeters || 500}м
           </span>
         </div>
       )}
