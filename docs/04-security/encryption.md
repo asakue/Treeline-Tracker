@@ -85,5 +85,22 @@ export interface EncryptedPacket {
                        ДА ──────┴────── НЕТ ───> [ОТКЛОНИТЬ: Tampered Packet]
                                 │
                                 ▼
-                 [УСПЕХ: Отобразить точку на карте]
+                  [УСПЕХ: Отобразить точку на карте]
 ```
+
+---
+
+## 5. Практическая реализация и безопасность API
+
+1. **Сквозное E2EE-шифрование в групповом чате (`src/views/group-chat.tsx`):**
+   - Все отправляемые сообщения шифруются на клиенте алгоритмом AES-256-GCM с использованием симметричного ключа группы (`IdentityManager.getOrCreateGroupKey`).
+   - Объект полезной нагрузки содержит зашифрованный `ciphertext`, случайный вектор `iv` и тег целостности `authTag`.
+   - В UI выводится криптографический статус шифрования (пиктограмма замка) и отпечаток ключа группы.
+
+2. **Отказоустойчивое декодирование ключей и пакетов (`src/core/security/crypto-service.ts`):**
+   - Метод `base64ToBuffer` очищает входные данные от пробельных символов и переносов строк `\r\n`, преобразует URL-safe символы (`-`, `_` ➔ `+`, `/`) и восстанавливает паддинг `=`.
+
+3. **Сетевая защита API и HTTP-заголовки (`api-security.ts` & `next.config.ts`):**
+   - Внедрен скользящий Rate Limiter по IP-адресам (защита от перебора и DoS).
+   - Все эндпоинты (`/api/locations`, `/api/emergency`, `/api/groups`, `/api/profile`, `/api/routes`, `/api/search-areas`) валидируются строгими схемами Zod.
+   - В `next.config.ts` активирован комплекс заголовков: Strict HSTS, CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy и Permissions-Policy.

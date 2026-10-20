@@ -29,15 +29,24 @@ export function bufferToBase64(buffer: ArrayBuffer | Uint8Array): string {
 }
 
 export function base64ToBuffer(base64: string): Uint8Array {
+  // Sanitize base64: trim, strip whitespace/newlines, convert URL-safe base64, ensure padding
+  let sanitized = (base64 || '').trim().replace(/\s+/g, '').replace(/-/g, '+').replace(/_/g, '/');
+  const remainder = sanitized.length % 4;
+  if (remainder === 2) {
+    sanitized += '==';
+  } else if (remainder === 3) {
+    sanitized += '=';
+  }
+
   if (typeof atob === 'function') {
-    const binary = atob(base64);
+    const binary = atob(sanitized);
     const bytes = new Uint8Array(binary.length);
     for (let i = 0; i < binary.length; i++) {
       bytes[i] = binary.charCodeAt(i);
     }
     return bytes;
   }
-  return new Uint8Array(Buffer.from(base64, 'base64'));
+  return new Uint8Array(Buffer.from(sanitized, 'base64'));
 }
 
 export class CryptoService {

@@ -23,7 +23,7 @@
 ├─────────────────────────────────────────────────────────────────────────┤
 │ Фаза 5: Safety Bar, геозоны safeRadius, фильтры GNSS и ИИ SAR [ВЫПОЛНЕНО]
 ├─────────────────────────────────────────────────────────────────────────┤
-│ Фаза 6: Автотесты (57 тестов / 6 сьютов), Observability лог & Линтинг [ВЫПОЛНЕНО]
+│ Фаза 6: Автотесты (67 тестов / 7 сьютов), E2EE Security & Observability [ВЫПОЛНЕНО]
 ├─────────────────────────────────────────────────────────────────────────┤
 │ Фаза 7: Аппаратный переход на физический LoRa BLE и релиз [В ПЛАНЕ]     │
 └─────────────────────────────────────────────────────────────────────────┘
@@ -84,14 +84,16 @@
 - **Фильтрация координат (`LocationFilter`):** Deadband (<5м), адаптивный троттлинг (5с / 30с при АКБ $\le 15\%$), Geohash base32 `geofire-common`, мгновенный SOS bypass.
 - ИИ-поиск пропавшего туриста (Genkit + Gemini 2.5 Flash, полигоны вероятных зон, факторы рельефа, юридический дисклеймер).
 
-### Фаза 6: Автотесты, Observability & Линтинг (`COMPLETED`)
-- **Vitest + RTL + JSDOM:** 57 автотестов по 6 сьютам (100% pass):
+### Фаза 6: Автотесты, E2EE Security, Observability & Линтинг (`COMPLETED`)
+- **Vitest + RTL + JSDOM:** 67 автотестов по 7 сьютам (100% pass):
   1. `profile-page.test.tsx` (16 тестов)
   2. `security-phase2.test.ts` (14 тестов, 39 ассертов)
-  3. `gpx-exporter.test.ts` (1 тест)
-  4. `test/profile-page.test.tsx` (6 тестов)
-  5. `resilience-and-rbac.test.ts` (4 теста: OCC, RBAC, MFA, Failover)
-  6. `location-and-offline.test.ts` (16 тестов: deadband, throttle, geofence, geohash, IndexedDB)
+  3. `backend-security-e2ee.test.ts` (9 тестов: байпас приватности при SOS, Base64 sanitization, групповые ключи AES-256, скользящий Rate Limiter по IP, SecurePacket E2EE)
+  4. `gpx-exporter.test.ts` (1 тест)
+  5. `test/profile-page.test.tsx` (6 тестов)
+  6. `resilience-and-rbac.test.ts` (4 теста: OCC, RBAC, MFA, Failover)
+  7. `location-and-offline.test.ts` (17 тестов: deadband, throttle, geofence, geohash, IndexedDB)
+- **Сетевая безопасность и OWASP:** Внедрен `api-security.ts` (Rate Limiting, Zod-валидация входящих тел запросов, санитизация ошибок) и комплекс заголовков HSTS, CSP, X-Frame-Options: DENY в `next.config.ts`.
 - **Потоковый журнал аудита:** Сервис `AuditLogger` с категориями `[GPS]`, `[SECURITY]`, `[TRANSPORT]`, `[OCC]`, `[AUTH]`, `[SOS]`, `[GEOFENCE]`, `[OFFLINE_QUEUE]`.
 - **Строгий линтинг и проверка типов:** `npm run typecheck` (`tsc --noEmit`) и `npm run lint` проходят без единой ошибки.
 

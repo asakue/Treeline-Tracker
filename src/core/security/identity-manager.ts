@@ -82,6 +82,46 @@ export class IdentityManager {
     const hash = await CryptoService.sha256Hex(publicKeyBase64);
     return `${hash.slice(0, 4)}:${hash.slice(4, 8)}`.toUpperCase();
   }
+
+  /**
+   * Retrieves an existing AES-256 group shared key or generates and persists a new one
+   */
+  static async getOrCreateGroupKey(groupId: string): Promise<string> {
+    const existing = this.getGroupKey(groupId);
+    if (existing) {
+      return existing;
+    }
+    const newKey = await CryptoService.generateGroupKey();
+    this.setGroupKey(groupId, newKey);
+    return newKey;
+  }
+
+  /**
+   * Stores a symmetric AES-256 group key (from QR code scan or online exchange)
+   */
+  static setGroupKey(groupId: string, keyBase64: string): void {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(`treeline_group_key_${groupId}`, keyBase64);
+      } catch {
+        // LocalStorage disabled or quota exceeded
+      }
+    }
+  }
+
+  /**
+   * Retrieves stored AES-256 group key if present
+   */
+  static getGroupKey(groupId: string): string | null {
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    try {
+      return localStorage.getItem(`treeline_group_key_${groupId}`);
+    } catch {
+      return null;
+    }
+  }
 }
 
 export const getOrCreateLocalIdentity = (name?: string) =>
@@ -89,3 +129,7 @@ export const getOrCreateLocalIdentity = (name?: string) =>
 
 export const rotateLocalIdentity = (name?: string) =>
   IdentityManager.rotateIdentity(name);
+
+export const getOrCreateGroupKey = (groupId: string) =>
+  IdentityManager.getOrCreateGroupKey(groupId);
+

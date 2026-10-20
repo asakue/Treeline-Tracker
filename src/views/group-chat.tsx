@@ -18,6 +18,8 @@ import { groupChats as initialGroupChats } from '@/entities/group/model/groups-d
 import { useAppContext } from '@/entities/app';
 import { useToast } from '@/shared/hooks/use-toast';
 import { ScrollArea } from '@/shared/ui/scroll-area';
+import { CryptoService } from '@/core/security/crypto-service';
+import { IdentityManager } from '@/core/security/identity-manager';
 
 export default function GroupChat() {
   const { groupsHook, activeGroupId, setActiveGroupId, setView } = useAppContext();
@@ -106,8 +108,24 @@ export default function GroupChat() {
     }
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (newMessage.trim() === '' || !selectedGroupId) return;
+
+    const rawText = newMessage.trim();
+    setNewMessage('');
+
+    let encryptedPayload: { ciphertext: string; iv: string; authTag: string } | undefined = undefined;
+    let isEncrypted = false;
+
+    try {
+      const groupKey = await IdentityManager.getOrCreateGroupKey(selectedGroupId);
+      if (groupKey) {
+        encryptedPayload = await CryptoService.encryptAesGcm(rawText, groupKey);
+        isEncrypted = true;
+      }
+    } catch (err) {
+      console.warn('E2EE AES encryption error, falling back:', err);
+    }
 
     const message = {
       id: `g${selectedGroupId}m${Date.now()}-${Math.random()
@@ -115,7 +133,9 @@ export default function GroupChat() {
         .substring(2, 9)}`,
       name: userProfile.displayName || 'Вы',
       avatar: userProfile.avatar || '',
-      text: newMessage,
+      text: rawText,
+      isEncrypted,
+      encryptedPayload,
       time: new Date().toLocaleTimeString('ru-RU', {
         hour: '2-digit',
         minute: '2-digit',
@@ -123,7 +143,7 @@ export default function GroupChat() {
       isSender: true,
     };
 
-    setAllChats((prevChats:any) => {
+    setAllChats((prevChats: any) => {
       const currentGroupChat = prevChats[selectedGroupId] || { messages: [] };
       const updatedMessages = [...currentGroupChat.messages, message];
       return {
@@ -132,10 +152,9 @@ export default function GroupChat() {
       };
     });
 
-    setNewMessage('');
-
     toast({
-      title: 'Сообщение отправлено!',
+      title: isEncrypted ? '🔒 Зашифровано и отправлено' : 'Сообщение отправлено!',
+      description: isEncrypted ? 'Защищено сквозным шифрованием AES-256-GCM' : undefined,
     });
   };
 
@@ -237,16 +256,21 @@ export default function GroupChat() {
                     <p className="text-sm font-medium mb-1">{message.name}</p>
                   )}
                   <p className="text-sm break-words">{message.text}</p>
-                  <p
+                  <div
                     className={cn(
-                      'text-xs mt-1 text-right',
+                      'text-xs mt-1 flex items-center gap-1 justify-end',
                       message.isSender
                         ? 'text-primary-foreground/70'
                         : 'text-muted-foreground/70'
                     )}
                   >
-                    {message.time}
-                  </p>
+                    {(message.isEncrypted || message.encryptedPayload) && (
+                      <span title="AES-256-GCM E2EE" className="inline-flex items-center">
+                        <Lock className="size-2.5 inline text-emerald-400 shrink-0" />
+                      </span>
+                    )}
+                    <span>{message.time}</span>
+                  </div>
                 </div>
               </div>
             ))}

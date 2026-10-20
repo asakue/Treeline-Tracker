@@ -21,8 +21,8 @@
 * [Сценарии использования (Use Cases)](./01-product/use-cases.md) — детальное описание основных пользовательских сценариев.
 
 ### [02. Требования (Requirements)](./02-requirements/)
-* [Функциональные требования](./02-requirements/functional.md) — спецификация требований `FR-001` – `FR-030`.
-* [Нефункциональные требования](./02-requirements/non-functional.md) — безопасность, производительность, надежность `NFR-001` – `NFR-015`.
+* [Функциональные требования](./02-requirements/functional.md) — спецификация требований `FR-001` – `FR-027`.
+* [Нефункциональные требования](./02-requirements/non-functional.md) — безопасность, производительность, надежность `NFR-001` – `NFR-017`.
 * [Критерии приемки (Acceptance Criteria)](./02-requirements/acceptance-criteria.md) — критерии готовности фич по Definition of Done.
 
 ### [03. Архитектура системы (Architecture)](./03-architecture/)

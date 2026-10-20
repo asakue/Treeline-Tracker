@@ -18,10 +18,10 @@
 - **Стилизация:** Tailwind CSS 3.4.1, Tailwind-Merge, Lucide-React, Radix UI primitives (`shadcn/ui`).
 - **Картография:** Leaflet 1.9.4, React-Leaflet 4.2.1, `geofire-common` гео-хеширование (Base32), OpenTopoMap рельеф, расчет DEM.
 - **ИИ-компонент:** Google Genkit (`@genkit-ai/google-genai`), Google Generative AI SDK (`@google/genai`), модель **Gemini 2.5 Flash** с Zod-схемами и полигонами поиска.
-- **Криптография и Безопасность:** W3C Web Crypto API (Ed25519, AES-256-GCM AEAD, SHA-256), Anti-Replay (монотонный sequence + 10-минутное окно свежести), децентрализованный менеджер идентичности, приватность координат (NORMAL / REDUCED / STEALTH).
+- **Криптография и Безопасность:** W3C Web Crypto API (Ed25519, AES-256-GCM AEAD, SHA-256), E2EE чата и телеметрии, Anti-Replay (монотонный sequence + 10-минутное окно свежести), децентрализованный менеджер идентичности и симметричных ключей групп, приватность координат (NORMAL / REDUCED / STEALTH / EMERGENCY с автоматическим байпасом при SOS), скользящий Rate Limiter по IP и комплекс HTTP-заголовков OWASP.
 - **Стейт и хранение:** React State, LocalStorage / Repository Pattern (`src/core/repositories`), Cloud Firestore с многовкладочным кэшем `persistentLocalCache`, IndexedDB оффлайн-очередь (`treeline_tracker_db`).
 - **Транспортная отказоустойчивость:** `TransportManager` (Internet ➔ MockMeshCore LoRa ➔ OfflineQueue), `ChaosSimulator`, потоковый `AuditLogger`.
-- **Тестирование и верификация:** Vitest 4.1.12, React Testing Library 16.3.3, `@testing-library/jest-dom`, JSDOM (57 тестов по 6 сьютам, 100% pass).
+- **Тестирование и верификация:** Vitest 4.1.12, React Testing Library 16.3.3, `@testing-library/jest-dom`, JSDOM (67 тестов по 7 сьютам, 100% pass).
 - **Сборка и линтинг:** Standalone output, Next Compiler, ESLint 9 (Flat Config).
 
 ---
@@ -71,7 +71,7 @@
 | **Журнал системного аудита** | `IMPLEMENTED` | Сервис `AuditLogger` с категориями `[GPS]`, `[SECURITY]`, `[TRANSPORT]`, `[OCC]`, `[AUTH]`, `[SOS]` и экспортом в JSON. |
 | **Экстренная связь (SOS / 112)** | `IMPLEMENTED` | Сигнал бедствия с удержанием 3 сек, звуковой тревогой, фиксацией высоты/заряда и симулированным шлюзом 112 с дисклеймером. |
 | **ИИ-поиск пропавшего туриста (SAR AI)** | `IMPLEMENTED` | Интеграция Genkit / Gemini 2.5 Flash (`/api/search-areas`) с эвристическим фоллбэком, факторами рельефа, confidence и полигонами поиска. |
-| **Тестовая инфраструктура (Vitest + RTL)** | `IMPLEMENTED` | 57 автоматических тестов по 6 сьютам (криптография, ролевой доступ, OCC, каскадный транспорт, геозоны, IndexedDB) — 100% pass. |
+| **Тестовая инфраструктура (Vitest + RTL)** | `IMPLEMENTED` | 67 автоматических тестов по 7 сьютам (криптография, сквозное E2EE, ролевой доступ, OCC, каскадный транспорт, геозоны, IndexedDB, санитизация Base64, rate limiting) — 100% pass. |
 
 ---
 
@@ -84,15 +84,21 @@
 3. **Защита от атак повторного воспроизведения (Replay Attacks):**  
    *Статус:* `MITIGATED & IMPLEMENTED`. Внедрен модуль `replay-protection.ts` с фильтрацией по 10-минутному окну свежести, кэшем `packetId` и монотонным инкрементом `sequenceNumber`.
 4. **Хранение секретов и ключей:**  
-   *Статус:* `MITIGATED & ENFORCED`. Настроен `.env.example`, `.gitignore` дополнен исключениями приватных ключей, активирован pre-commit скрипт `scripts/secret-scan.mjs` и сканирование TruffleHog. Приватные ключи пользователей хранятся исключительно в изолированном локальном хранилище клиента.
+   *Статус:* `MITIGATED & ENFORCED`. Настроен `.env.example`, `.gitignore` дополнен исключениями приватных ключей, активирован pre-commit скрипт `scripts/secret-scan.mjs` и сканирование TruffleHog. Приватные ключи пользователей хранятся исключительно в изолированном локальном хранилище клиента. Управление групповыми ключами AES-256 инкапсулировано в `IdentityManager`.
 5. **Ролевой контроль доступа (RBAC & MFA):**  
    *Статус:* `IMPLEMENTED`. Доменная типизация ролей (`hiker`, `guide`, `rescuer`, `admin`), декларативные правила `firestore.rules`, двухфакторная аутентификация TOTP.
+6. **Сквозное E2EE-шифрование в чате (`GroupChat`):**  
+   *Статус:* `IMPLEMENTED`. Сообщения шифруются AES-256-GCM перед отправкой с прикреплением `authTag` и отображением статуса защиты.
+7. **Безопасность API-границ и заголовков (OWASP):**  
+   *Статус:* `IMPLEMENTED`. Скользящий Rate Limiter по IP в `api-security.ts`, валидация тел запросов Zod, безопасный маппинг ошибок, строгие заголовки HSTS, CSP, X-Frame-Options в `next.config.ts`.
+8. **Автоматический байпас приватности при ЧС (SOS):**  
+   *Статус:* `IMPLEMENTED`. В `privacy-filter.ts` сигнал SOS отменяет скрытие (`STEALTH`) и огрубление (`REDUCED`), передавая точные аппаратные координаты.
 
 ---
 
 ## 6. Текущий статус технического долга
 
-- **Тестирование (Полностью решено):** Внедрена среда Vitest и React Testing Library. Созданы комплексные тесты для `ProfilePage` (`profile-page.test.tsx`), слоя безопасности (`security-phase2.test.ts`), экспорта GPX (`gpx-exporter.test.ts`), отказоустойчивости и OCC (`resilience-and-rbac.test.ts`), геозон и оффлайн-очереди (`location-and-offline.test.ts`).
+- **Тестирование (Полностью решено):** Внедрена среда Vitest и React Testing Library. Созданы комплексные тесты для `ProfilePage` (`profile-page.test.tsx`), слоя безопасности (`security-phase2.test.ts`, `backend-security-e2ee.test.ts`), экспорта GPX (`gpx-exporter.test.ts`), отказоустойчивости и OCC (`resilience-and-rbac.test.ts`), геозон и оффлайн-очереди (`location-and-offline.test.ts`).
 - **Связность компонентов (Полностью разрешено):** Репозитории абстрагируют доступ к данным; монолитные дубликаты в `components/` сведены к прокси-реэкспортам FSD-модулей.
 - **Оффлайн-надежность (Полностью разрешено):** Внедрен `TransportManager`, очередь `OfflineQueue` на `IndexedDB` и `persistentLocalCache` для Firestore.
 - **Остаточный долг:** Подключение к нативным BLE-драйверам физических аппаратных модулей LoRa (ESP32 / Semtech SX1262) при переходе к стадии аппаратного производства.
@@ -107,4 +113,5 @@
 4. **Фаза 3 (Транспортная абстракция и каскадный failover):** `COMPLETED` (`TransportManager`, `InternetTransport`, `MockMeshCoreTransport`).
 5. **Фаза 4 (Оффлайн-очередь Store-and-Forward и кэш Firestore):** `COMPLETED` (`IndexedDBQueueStorage`, `persistentLocalCache`, приоритезация SOS).
 6. **Фаза 5 (Экстренный SOS-маяк, геозоны safeRadiusMeters и ИИ SAR):** `COMPLETED` (SOS 3 сек, Deadband/Throttle, Gemini 2.5 Flash).
-7. **Фаза 6 (Автотесты и QA):** `COMPLETED` (100% тестов пройдено: 57 тестов / 6 сьютов).
+7. **Фаза 6 (Автотесты и QA):** `COMPLETED` (100% тестов пройдено: 67 тестов / 7 сьютов).
+

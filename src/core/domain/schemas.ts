@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 
-export const PrivacyModeSchema = z.enum(['NORMAL', 'REDUCED', 'STEALTH']);
+export const PrivacyModeSchema = z.enum(['NORMAL', 'REDUCED', 'STEALTH', 'EMERGENCY']);
 
 export const TransportTypeSchema = z.enum(['INTERNET', 'MESH_CORE', 'OFFLINE_BUFFER']);
 
@@ -30,6 +30,7 @@ export const LocationUpdateSchema = z.object({
   heading: z.number().min(0).max(360).optional(),
   batteryLevel: z.number().min(0).max(100).optional(),
   privacyMode: PrivacyModeSchema.default('NORMAL'),
+  isEmergency: z.boolean().optional(),
 });
 
 export const MemberSchema = z.object({

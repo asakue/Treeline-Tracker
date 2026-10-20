@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Group, Hiker } from '@/entities/group';
 import { groupRepository } from '@/core/repositories';
 import { groupChats as initialChats } from '../model/groups-data';
+import { IdentityManager } from '@/core/security/identity-manager';
 
 const CHATS_STORAGE_KEY = 'groupChats';
 
@@ -75,10 +76,20 @@ export const useGroups = () => {
 
   const addGroup = useCallback(
     async (newGroupData: Omit<Group, 'id'>) => {
+      const newGroupId = `group-${Date.now()}`;
+      const sharedKeyId = newGroupData.sharedKeyId || `key_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
       const newGroup: Group = {
         ...newGroupData,
-        id: `group-${Date.now()}`,
+        id: newGroupId,
+        sharedKeyId,
       };
+
+      try {
+        await IdentityManager.getOrCreateGroupKey(newGroupId);
+      } catch (err) {
+        console.warn('Failed to auto-generate AES group key:', err);
+      }
 
       await groupRepository.createGroup(newGroup);
       setGroups((prev) => [...prev, newGroup]);

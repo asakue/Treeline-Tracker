@@ -10,9 +10,20 @@ export class PrivacyFilter {
   private static readonly GRID_STEP_DEGREES = 0.002;
 
   /**
-   * Applies privacy filtering transformations to a location update
+   * Applies privacy filtering transformations to a location update.
+   * In EMERGENCY mode (or when location.isEmergency is true), stealth/reduced modes
+   * are overridden to broadcast full GNSS accuracy for Search & Rescue.
    */
   static apply(location: LocationUpdate, mode: PrivacyMode = location.privacyMode): LocationUpdate | null {
+    // Emergency / SOS safety override per docs/04-security/privacy.md
+    if (mode === 'EMERGENCY' || location.isEmergency) {
+      return {
+        ...location,
+        privacyMode: 'EMERGENCY',
+        isEmergency: true,
+      };
+    }
+
     switch (mode) {
       case 'NORMAL':
         return {
@@ -21,7 +32,7 @@ export class PrivacyFilter {
         };
 
       case 'REDUCED': {
-        // Discretize lat and lon to privacy grid
+        // Discretize lat and lon to privacy grid (~200m)
         const obfuscatedLat =
           Math.round(location.latitude / this.GRID_STEP_DEGREES) * this.GRID_STEP_DEGREES;
         const obfuscatedLon =
@@ -40,7 +51,7 @@ export class PrivacyFilter {
       }
 
       case 'STEALTH':
-        // In stealth mode, location is withheld from peer broadcasts
+        // In stealth mode without emergency, location is withheld from peer broadcasts
         return null;
 
       default:

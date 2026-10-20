@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { enforceRateLimit } from '@/core/security/api-security';
 
 const SearchAreaInputSchema = z.object({
   lastKnownLocation: z.string().min(1, 'Все поля обязательны для заполнения'),
@@ -49,6 +50,9 @@ function getFallbackResponse(input: { lastKnownLocation: string; weatherConditio
 }
 
 export async function POST(req: NextRequest) {
+  const rateLimitResponse = enforceRateLimit(req, { limit: 20, windowMs: 60 * 1000 });
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const body = await req.json();
     const inputValidation = SearchAreaInputSchema.safeParse(body);

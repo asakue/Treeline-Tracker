@@ -62,11 +62,12 @@
 
 Для фронтенда развернута тестовая инфраструктура на базе **Vitest 4.x**, **React Testing Library** и **JSDOM**:
 - Настройка тестовой среды: `vitest.config.ts`, подключение расширений DOM-ассершенов (`@testing-library/jest-dom/vitest`), изоляция localStorage для Node 20+.
-- Всего развернуто 6 сьютов автоматических тестов (**57 тестов, 100% pass**):
+- Всего развернуто 7 сьютов автоматических тестов (**67 тестов, 100% pass**):
   - `src/views/__tests__/profile-page.test.tsx` (16 тестов) — расчет прогресса профиля (0%–100%), ротация ключей Ed25519, приватность.
   - `src/core/security/__tests__/security-phase2.test.ts` (14 тестов, 39 ассертов) — криптостойкость E2EE AEAD, подписи Ed25519, защита от replay-атак.
+  - `src/core/security/__tests__/backend-security-e2ee.test.ts` (9 тестов) — байпас огрубления при SOS, отказоустойчивость Base64, управление ключами групп AES-256 в IdentityManager, Rate Limiting и валидация.
   - `src/core/utils/__tests__/gpx-exporter.test.ts` (1 тест) — экспорт валидных GPX XML треков.
   - `src/test/profile-page.test.tsx` (6 тестов) — базовые проверки профиля.
   - `src/test/resilience-and-rbac.test.ts` (4 теста) — OCC блокировка версий, ролевой доступ RBAC, TOTP MFA, отказоустойчивость транспорта.
-  - `src/test/location-and-offline.test.ts` (16 тестов) — deadband/throttle фильтры локации, Geohash spatial hashing, геозоны safeRadiusMeters, IndexedDB оффлайн-очередь и LocalStorage fallback.
+  - `src/test/location-and-offline.test.ts` (17 тестов) — deadband/throttle фильтры локации, Geohash spatial hashing, геозоны safeRadiusMeters, IndexedDB оффлайн-очередь и LocalStorage fallback.
 

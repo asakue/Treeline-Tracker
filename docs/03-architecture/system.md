@@ -217,19 +217,26 @@ classDiagram
         +encryptPayload(string payload, string secretKey) Promise~EncryptedData~
         +decryptPayload(EncryptedData encrypted, string secretKey) Promise~string~
         +signData(string data, string privateKey) Promise~string~
-        +verifySignature(string data, string signature, string publicKey) Promise~boolean~
-    }
-
     class IdentityManager {
-        +getOrCreateLocalIdentity() UserIdentity
-        +rotateLocalIdentity() UserIdentity
-        +exportPublicProfile() PublicProfile
+        +getOrCreateIdentity(string name) UserIdentity
+        +rotateIdentity(string name) UserIdentity
+        +getPublicKeyFingerprint(string publicKey) string
+        +getOrCreateGroupKey(string groupId) string
+        +setGroupKey(string groupId, string keyBase64) void
+        +getGroupKey(string groupId) string
     }
 
     class PrivacyFilter {
-        +applyPrivacyMode(GeoCoordinate raw, PrivacyMode mode) GeoCoordinate
-        +truncateCoordinates(GeoCoordinate raw, number decimals) GeoCoordinate
-        +addNoise(GeoCoordinate raw, number radiusMeters) GeoCoordinate
+        +apply(LocationUpdate loc, PrivacyMode mode) LocationUpdate
+        +isBroadcastAllowed(PrivacyMode mode) boolean
+        +truncate(number coord, number decimals) number
+        +addNoise(number coord, number radiusMeters) number
+    }
+
+    class ApiSecurity {
+        +checkRateLimit(NextRequest req, RateLimitOptions opts) RateLimitResult
+        +validateBody(NextRequest req, ZodSchema schema) Promise~T~
+        +handleApiError(unknown error, string defaultMessage) NextResponse
     }
 
     class ReplayProtection {
@@ -273,6 +280,7 @@ classDiagram
     LocalStorageEmergencyRepository ..> EmergencyEvent : manages
     IdentityManager ..> UserIdentity : manages
     IdentityManager ..> CryptoService : uses
+    ApiSecurity ..> NextRequest : validates
 ```
 
 ---

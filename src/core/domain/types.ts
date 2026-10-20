@@ -4,7 +4,7 @@
  * and System Security Model (docs/04-security/threat-model.md)
  */
 
-export type PrivacyMode = 'NORMAL' | 'REDUCED' | 'STEALTH';
+export type PrivacyMode = 'NORMAL' | 'REDUCED' | 'STEALTH' | 'EMERGENCY';
 
 export type TransportType = 'INTERNET' | 'MESH_CORE' | 'OFFLINE_BUFFER';
 
@@ -29,6 +29,7 @@ export interface LocationUpdate {
   heading?: number; // degrees 0..360
   batteryLevel?: number; // 0..100%
   privacyMode: PrivacyMode;
+  isEmergency?: boolean;
 }
 
 export interface Member {

@@ -198,13 +198,14 @@ Treeline Tracker спроектирован как защищенная, выс�
 ## 9. Стратегия тестирования и CI/CD
 
 ### Тестирование
-* **Vitest + React Testing Library + JSDOM:** Развернут полноценный тестовый раннер со строгой изоляцией окружения. В проекте активны 6 комплексных сьютов тестов (**57 тестов, 100% pass**):
+* **Vitest + React Testing Library + JSDOM:** Развернут полноценный тестовый раннер со строгой изоляцией окружения. В проекте активны 7 комплексных сьютов тестов (**67 тестов, 100% pass**):
   1. `src/views/__tests__/profile-page.test.tsx` (16 тестов) — верификация рендеринга профиля, реактивного расчета процентов заполнения (0%–100%), валидации модального окна, переключения вкладок, ротации ключей Ed25519 и селектора приватности.
   2. `src/core/security/__tests__/security-phase2.test.ts` (14 тестов, 39 ассершенов) — сквозная проверка криптографического ядра Web Crypto: генерация и подпись Ed25519, шифрование AES-256-GCM AEAD с контролем authTag, фильтрация приватности (NORMAL, REDUCED 200м, STEALTH) и защита от replay-атак (10-минутное окно свежести).
-  3. `src/core/utils/__tests__/gpx-exporter.test.ts` (1 тест) — валидация генерации GPX XML-треков с высотными отметками.
-  4. `src/test/profile-page.test.tsx` (6 тестов) — базовые проверки поведения компонента профиля.
-  5. `src/test/resilience-and-rbac.test.ts` (4 теста) — Optimistic Concurrency Control (OCC), ролевые права RBAC, вызов MFA-челленджа, устойчивость транспорта к сбоям и дедупликация очередей.
-  6. `src/test/location-and-offline.test.ts` (16 тестов) — GNSS deadband фильтр (<5м), адаптивный троттлинг (5с/30с при АКБ $\le 15\%$), экстренный байпас SOS, Geohash spatial hashing (base32 geofire-common), расчет геозон Haversine (`INSIDE`/`WARNING`/`BREACH`), персистентная оффлайн-очередь IndexedDB и LocalStorage fallback.
+  3. `src/core/security/__tests__/backend-security-e2ee.test.ts` (9 тестов) — сквозная E2EE верификация: снятие приватности при SOS в STEALTH/REDUCED режимах, отказоустойчивое декодирование Base64 с санитизацией пробелов и переносов строк, генерация и персистентное сохранение симметричных ключей групп AES-256 в IdentityManager, скользящий Rate Limiter по IP и сквозная отправка экстренных пакетов SecurePacket.
+  4. `src/core/utils/__tests__/gpx-exporter.test.ts` (1 тест) — валидация генерации GPX XML-треков с высотными отметками.
+  5. `src/test/profile-page.test.tsx` (6 тестов) — базовые проверки поведения компонента профиля.
+  6. `src/test/resilience-and-rbac.test.ts` (4 теста) — Optimistic Concurrency Control (OCC), ролевые права RBAC, вызов MFA-челленджа, устойчивость транспорта к сбоям и дедупликация очередей.
+  7. `src/test/location-and-offline.test.ts` (17 тестов) — GNSS deadband фильтр (<5м), адаптивный троттлинг (5с/30с при АКБ $\le 15\%$), экстренный байпас SOS, Geohash spatial hashing (base32 geofire-common), расчет геозон Haversine (`INSIDE`/`WARNING`/`BREACH`), персистентная оффлайн-очередь IndexedDB и LocalStorage fallback.
 * **Typecheck & Lint:** Обязательная проверка типов `tsc --noEmit` и линтинг ESLint 9 перед каждым коммитом.
 
 ### CI/CD Workflow (`.github/workflows/ci.yml`)
@@ -212,7 +213,7 @@ Treeline Tracker спроектирован как защищенная, выс�
 * Шаги конвейера:
   1. `Security Scan` (TruffleHog на наличие утечек ключей и `scripts/secret-scan.mjs`).
   2. `Lint & Typecheck` (ESLint 9, TypeScript 5).
-  3. `Run Unit & Integration Tests` (Vitest: 57 тестов).
+  3. `Run Unit & Integration Tests` (Vitest: 67 тестов).
   4. `Production Build` (Next.js build).
   5. `Deploy to Firebase App Hosting` (при успешном прохождении тестов в `main`).
 
