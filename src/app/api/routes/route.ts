@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerDbService } from '@/lib/server-db';
-import { enforceRateLimit, validateRequestBody, handleApiError } from '@/core/security/api-security';
+import { enforceRateLimit, validateRequestBody, handleApiError, authenticateRequest } from '@/core/security/api-security';
 import { RouteDifficultySchema } from '@/core/domain/schemas';
 import { z } from 'zod';
 
@@ -28,6 +28,9 @@ export async function GET(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 120, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const auth = authenticateRequest(req);
+  if (!auth.authenticated && auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const includeArchived = searchParams.get('includeArchived') === 'true';
@@ -41,6 +44,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 60, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
+
+  const auth = authenticateRequest(req, {
+    requiredRole: ['guide', 'rescuer', 'admin'],
+  });
+  if (!auth.authenticated && auth.response) return auth.response;
 
   try {
     const validation = await validateRequestBody(req, CreateRouteInputSchema);
@@ -59,6 +67,9 @@ export async function PUT(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 90, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const auth = authenticateRequest(req);
+  if (!auth.authenticated && auth.response) return auth.response;
+
   try {
     const validation = await validateRequestBody(req, UpdateRouteInputSchema);
     if (!validation.success) {
@@ -76,6 +87,9 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 60, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
+
+  const auth = authenticateRequest(req);
+  if (!auth.authenticated && auth.response) return auth.response;
 
   try {
     const { searchParams } = new URL(req.url);

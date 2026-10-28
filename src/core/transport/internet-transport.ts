@@ -6,6 +6,18 @@
 import { ITransport, TransportPacket } from './interfaces';
 import { ChaosSimulator } from './chaos-simulator';
 import { AuditLogger } from './audit-logger';
+import { Rbac } from '../security/rbac-service';
+
+function toApiUrl(path: string): string {
+  if (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+    try {
+      return new URL(path, window.location.origin).toString();
+    } catch {
+      // fallback
+    }
+  }
+  return path.startsWith('http') ? path : `http://localhost:3000${path}`;
+}
 
 export class InternetTransport implements ITransport {
   public readonly name = 'Internet (Cellular / Cloud)';
@@ -29,17 +41,26 @@ export class InternetTransport implements ITransport {
     try {
       if (typeof window !== 'undefined' && typeof window.fetch === 'function') {
         try {
+          const headers = {
+            'Content-Type': 'application/json',
+            ...(typeof window !== 'undefined' ? Rbac.getAuthHeaders() : {}),
+          };
+
+          const bodyPayload = packet.securePacket
+            ? { ...packet.payload, securePacket: packet.securePacket }
+            : packet.payload;
+
           if (packet.type === 'LOCATION_UPDATE' && packet.payload) {
-            await fetch('/api/locations', {
+            await fetch(toApiUrl('/api/locations'), {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(packet.payload),
+              headers,
+              body: JSON.stringify(bodyPayload),
             });
           } else if (packet.type === 'SOS_ALERT' && packet.payload) {
-            await fetch('/api/emergency', {
+            await fetch(toApiUrl('/api/emergency'), {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(packet.payload),
+              headers,
+              body: JSON.stringify(bodyPayload),
             });
           }
         } catch {

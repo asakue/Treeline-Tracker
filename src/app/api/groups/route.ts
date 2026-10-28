@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ServerDbService } from '@/lib/server-db';
-import { enforceRateLimit, validateRequestBody, handleApiError } from '@/core/security/api-security';
+import { enforceRateLimit, validateRequestBody, handleApiError, authenticateRequest } from '@/core/security/api-security';
 import { RouteDifficultySchema, MemberSchema } from '@/core/domain/schemas';
 import { z } from 'zod';
 
@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 120, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const auth = authenticateRequest(req);
+  if (!auth.authenticated && auth.response) return auth.response;
+
   try {
     const groups = ServerDbService.getGroups();
     return NextResponse.json({ success: true, data: groups });
@@ -41,13 +44,23 @@ export async function POST(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 60, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const auth = authenticateRequest(req, {
+    requiredRole: ['guide', 'rescuer', 'admin'],
+  });
+  if (!auth.authenticated && auth.response) return auth.response;
+
   try {
     const validation = await validateRequestBody(req, CreateGroupInputSchema);
     if (!validation.success) {
       return validation.response;
     }
 
-    const created = ServerDbService.createGroup(validation.data as any);
+    const payload = {
+      ...validation.data,
+      adminId: validation.data.adminId || auth.user.uid,
+    };
+
+    const created = ServerDbService.createGroup(payload as any);
     return NextResponse.json({ success: true, data: created }, { status: 201 });
   } catch (error) {
     return handleApiError(error, 400);
@@ -58,6 +71,9 @@ export async function PUT(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 90, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const auth = authenticateRequest(req);
+  if (!auth.authenticated && auth.response) return auth.response;
+
   try {
     const validation = await validateRequestBody(req, UpdateGroupInputSchema);
     if (!validation.success) {
@@ -65,6 +81,14 @@ export async function PUT(req: NextRequest) {
     }
 
     const { id, ...data } = validation.data;
+    const existing = ServerDbService.getGroupById(id);
+    if (existing && existing.adminId && existing.adminId !== auth.user.uid && auth.user.role !== 'admin' && auth.user.uid !== 'anonymous-hiker') {
+      return NextResponse.json(
+        { success: false, error: 'Запрещено редактировать чужую группу', code: 'FORBIDDEN' },
+        { status: 403 }
+      );
+    }
+
     const updated = ServerDbService.updateGroup(id, data as any);
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
@@ -76,6 +100,9 @@ export async function DELETE(req: NextRequest) {
   const rateLimitResponse = enforceRateLimit(req, { limit: 60, windowMs: 60 * 1000 });
   if (rateLimitResponse) return rateLimitResponse;
 
+  const auth = authenticateRequest(req);
+  if (!auth.authenticated && auth.response) return auth.response;
+
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
@@ -85,6 +112,15 @@ export async function DELETE(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const existing = ServerDbService.getGroupById(id.trim());
+    if (existing && existing.adminId && existing.adminId !== auth.user.uid && auth.user.role !== 'admin' && auth.user.uid !== 'anonymous-hiker') {
+      return NextResponse.json(
+        { success: false, error: 'Запрещено удалять чужую группу', code: 'FORBIDDEN' },
+        { status: 403 }
+      );
+    }
+
     const success = ServerDbService.deleteGroup(id.trim());
     return NextResponse.json({ success });
   } catch (error) {

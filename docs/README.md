@@ -21,14 +21,14 @@
 * [Сценарии использования (Use Cases)](./01-product/use-cases.md) — детальное описание основных пользовательских сценариев.
 
 ### [02. Требования (Requirements)](./02-requirements/)
-* [Функциональные требования](./02-requirements/functional.md) — спецификация требований `FR-001` – `FR-027`.
+* [Функциональные требования](./02-requirements/functional.md) — спецификация требований `FR-001` – `FR-032`.
 * [Нефункциональные требования](./02-requirements/non-functional.md) — безопасность, производительность, надежность `NFR-001` – `NFR-017`.
 * [Критерии приемки (Acceptance Criteria)](./02-requirements/acceptance-criteria.md) — критерии готовности фич по Definition of Done.
 
 ### [03. Архитектура системы (Architecture)](./03-architecture/)
 * [Системная архитектура](./03-architecture/system.md) — многоуровневая архитектура C4.
-* [Фронтенд-архитектура](./03-architecture/frontend.md) — разделение на UI, Application и Domain слои.
-* [Бэкенд и хранение данных](./03-architecture/backend.md) — абстракция репозиториев, Firestore и Local Storage.
+* [Фронтенд-архитектура](./03-architecture/frontend.md) — модульный реестр экранов, ViewErrorBoundary, физика рельефа и Leaflet.
+* [Бэкенд и хранение данных](./03-architecture/backend.md) — абстракция репозиториев, Zero-Hang Firestore, эндпоинты `/api/*` и Rate Limiting.
 * [Коммуникационный слой](./03-architecture/communication.md) — Transport Manager, гибридная модель Internet + Mesh.
 * [Потоки данных (Data Flow)](./03-architecture/data-flow.md) — схемы прохождения пакетов от GPS до рендеринга на карте.
 * **[Архитектурные решения (ADR)](./03-architecture/adr/):**
@@ -41,6 +41,8 @@
   * [ADR-007: Политика хранения и минимизации геоданных](./03-architecture/adr/ADR-007-location-retention-policy.md)
   * [ADR-008: ИИ как система поддержки принятия решений (Decision Support)](./03-architecture/adr/ADR-008-ai-as-decision-support.md)
   * [ADR-009: Архитектура детерминированного симулятора](./03-architecture/adr/ADR-009-simulation-architecture.md)
+  * [ADR-010: Автономное определение региона и физико-рельефная классификация](./03-architecture/adr/ADR-010-autonomous-terrain-and-geographic-classification.md)
+  * [ADR-011: Модульный реестр экранов View Registry и изоляция сбоев](./03-architecture/adr/ADR-011-view-registry-and-error-isolation.md)
 
 ### [04. Безопасность и Приватность (Security & Privacy)](./04-security/)
 * [Модель угроз (Threat Model)](./04-security/threat-model.md) — классификация ассетов, акторов, защита секретов и ИИ-гардрейлы.

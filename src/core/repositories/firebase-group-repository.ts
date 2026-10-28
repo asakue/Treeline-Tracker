@@ -20,6 +20,17 @@ import { GroupSchema } from '../domain/schemas';
 import { getFirestoreInstance, isFirebaseConfigured } from '@/firebase';
 import { LocalStorageGroupRepository } from './local-storage-group-repository';
 
+const FIRESTORE_TIMEOUT_MS = 2000;
+
+function withFirestoreTimeout<T>(promise: Promise<T>, ms = FIRESTORE_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Firestore request timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export class FirebaseGroupRepository implements IGroupRepository {
   private fallback: LocalStorageGroupRepository;
   private collectionName = 'groups';
@@ -41,7 +52,7 @@ export class FirebaseGroupRepository implements IGroupRepository {
 
     try {
       const colRef = collection(firestore, this.collectionName);
-      const snapshot = await getDocs(colRef);
+      const snapshot = await withFirestoreTimeout(getDocs(colRef));
       if (snapshot.empty) {
         // If Firestore is empty, fallback to local storage / default groups
         const localGroups = await this.fallback.getGroups();
@@ -66,8 +77,8 @@ export class FirebaseGroupRepository implements IGroupRepository {
       });
 
       return groups;
-    } catch (err) {
-      console.warn('[FirebaseGroupRepository] Firestore read error, falling back to local storage:', err);
+    } catch {
+      // Unauthenticated or offline: gracefully serve from resilient local storage
       return this.fallback.getGroups();
     }
   }
@@ -80,14 +91,13 @@ export class FirebaseGroupRepository implements IGroupRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, id);
-      const snap = await getDoc(docRef);
+      const snap = await withFirestoreTimeout(getDoc(docRef));
       if (snap.exists()) {
         const data = snap.data();
         return GroupSchema.parse({ id: snap.id, ...data });
       }
       return this.fallback.getGroupById(id);
     } catch (err) {
-      console.warn(`[FirebaseGroupRepository] Firestore getDoc(${id}) error:`, err);
       return this.fallback.getGroupById(id);
     }
   }
@@ -103,14 +113,15 @@ export class FirebaseGroupRepository implements IGroupRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, validated.id);
-      await setDoc(docRef, {
-        ...validated,
-        updatedAt: Date.now(),
-        version: validated.version || 1,
-      });
+      await withFirestoreTimeout(
+        setDoc(docRef, {
+          ...validated,
+          updatedAt: Date.now(),
+          version: validated.version || 1,
+        })
+      );
       return validated;
     } catch (err) {
-      console.warn('[FirebaseGroupRepository] Firestore createGroup error:', err);
       return validated;
     }
   }
@@ -129,10 +140,9 @@ export class FirebaseGroupRepository implements IGroupRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, validated.id);
-      await setDoc(docRef, validated, { merge: true });
+      await withFirestoreTimeout(setDoc(docRef, validated, { merge: true }));
       return validated;
     } catch (err) {
-      console.warn('[FirebaseGroupRepository] Firestore updateGroup error:', err);
       return validated;
     }
   }
@@ -144,10 +154,9 @@ export class FirebaseGroupRepository implements IGroupRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, id);
-      await deleteDoc(docRef);
+      await withFirestoreTimeout(deleteDoc(docRef));
       return true;
     } catch (err) {
-      console.warn(`[FirebaseGroupRepository] Firestore deleteGroup(${id}) error:`, err);
       return false;
     }
   }

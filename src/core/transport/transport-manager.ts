@@ -10,6 +10,8 @@ import { MockMeshCoreTransport } from './meshcore-transport';
 import { OfflineQueue } from './offline-queue';
 import { ChaosSimulator } from './chaos-simulator';
 import { AuditLogger } from './audit-logger';
+import { SecurePacketService } from '@/core/security/secure-packet-service';
+import { IdentityManager } from '@/core/security/identity-manager';
 
 type StatusListener = (status: TransportStatus) => void;
 
@@ -73,6 +75,31 @@ class TransportManagerService {
       id: `pkt_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       createdAt: Date.now(),
     };
+
+    // Attach E2EE cryptographic envelope (SecurePacket) if not present
+    if (!fullPacket.securePacket && fullPacket.payload) {
+      try {
+        const identity = await IdentityManager.getOrCreateIdentity();
+        if (identity.privateKey) {
+          const groupId = (fullPacket.payload?.groupId as string) || 'treeline-general';
+          const groupKey = await IdentityManager.getOrCreateGroupKey(groupId);
+          const securePacket = await SecurePacketService.buildSecurePacket({
+            payload: fullPacket.payload,
+            senderPublicKey: identity.publicKey,
+            senderPrivateKey: identity.privateKey,
+            recipientOrGroupId: groupId,
+            groupKeyBase64: groupKey,
+            sequenceNumber: Date.now(),
+            privacyMode: (fullPacket.payload?.privacyMode as any) || 'NORMAL',
+          });
+          if (securePacket) {
+            fullPacket.securePacket = securePacket;
+          }
+        }
+      } catch (err) {
+        console.warn('SecurePacket construction error (falling back to plain packet):', err);
+      }
+    }
 
     // 1. Try Internet Transport (Primary)
     if (await this.internetTransport.isAvailable()) {

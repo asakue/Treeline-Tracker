@@ -2,11 +2,11 @@
 
 [![CI Pipeline](https://github.com/asakue/Treeline-Tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/asakue/Treeline-Tracker/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Next.js](https://img.shields.io/badge/Next.js-15.3-black)](https://nextjs.org/)
-[![Bun](https://img.shields.io/badge/Bun-1.1+-fbf0df?logo=bun)](https://bun.sh/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.5-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![Firebase](https://img.shields.io/badge/Firebase-v11-orange)](https://firebase.google.com/)
 [![Genkit](https://img.shields.io/badge/Genkit-Gemini%202.5%20Flash-blue)](https://firebase.google.com/docs/genkit)
-[![Tests](https://img.shields.io/badge/Tests-67%2F67%20Passed-brightgreen)](https://github.com/asakue/Treeline-Tracker)
+[![Tests](https://img.shields.io/badge/Tests-170%20Passed-brightgreen)](https://github.com/asakue/Treeline-Tracker)
 
 **Treeline Tracker** — современная защищенная веб-платформа для координации туристических групп, мониторинга местоположения участников в реальном времени и содействия поисково-спасательным операциям (Search & Rescue / SAR) в условиях дикой природы и высокогорья.
 
@@ -24,12 +24,15 @@
 ## 🚀 Ключевые возможности (Key Features)
 
 * **🧭 Панель состояния экспедиции (Expedition Status Bar):** Сквозной мониторинг статуса геопозиционирования (GPS фикс ±3–5м), активного канала связи (`Интернет`, `MeshCore LoRa`, `Офлайн-буфер IndexedDB`), E2EE-защиты и заряда аккумулятора с быстрым переключателем ролей RBAC.
+* **⛰️ Автономное геоопределение региона и типа маршрута (Zero-Select Architecture):** Полный отказ от ручного выбора регионов и видов маршрута. Сервис `detectRouteRegion` автоматически определяет горный район (Приэльбрусье, Домбай, Безенги, Красная Поляна, Алтай, Байкал/ББТ, Саяны, Хибины, Камчатка, Крым, Урал, Альпы) по координатам, а `autoDetectRouteType` и `autoDetectRoutingProfile` классифицируют маршрут на «Горный» / «Равнинный» и подбирают пешеходный профиль на основе уклона ($\ge 15^\circ$), высоты ($\ge 900$м) или набора высоты ($\ge 250$м).
+* **⚡ Физиологическое моделирование энергозатрат и темпа:** Расчет расхода энергии туриста по метаболическому уравнению Alberto E. Minetti ($C = 280.5 \cdot i^5 - 58.7 \cdot i^4 - 289.2 \cdot i^3 + 60.1 \cdot i^2 + 52.8 \cdot i + 284.3$ Дж/(кг·км)), пешеходная функция Тоблера (Tobler's Hiking Function) с поправкой на крутизну склонов, шкала сложности SAC (T1–T4) и модальное окно глубокой аналитики рельефа `RouteTerrainAnalyticsModal`.
+* **🧩 Модульный реестр экранов View Registry и изоляция сбоев:** Децентрализованная архитектура представлений `view-registry.ts` с динамической ленивой загрузкой чанков (`React.lazy`), централизованной проверкой прав и изоляцией каждого экрана через `ViewErrorBoundary`. Ошибка в одном представлении не приводит к падению приложения.
+* **💾 Оффлайн-кэш тайлов карты и Zero-Hang Firestore:** Двухуровневое кэширование картографических тайлов OpenTopoMap в IndexedDB (`treeline_map_tiles_cache`) и Service Worker (`sw.js`). Защита репозиториев от 10-секундных сетевых зависаний Firestore (`withFirestoreTimeout`) с мгновенным переключением на автономное локальное хранилище.
 * **🛡️ Геозоны безопасности (`safeRadiusMeters`) и контроль дистанции (FR-002, UC-02):** Интерактивная настройка безопасного радиуса группы (от 50 до 10 000м), отрисовка геозоны вокруг лидера на Leaflet, расчет удаления участников по формуле Haversine со статусами `INSIDE` (в зоне), `WARNING` (приближение к границе) и `BREACH` (выход из зоны с тревожным баннером и алертом в аудит-лог).
 * **📡 Адаптивная фильтрация GNSS (Deadband + Throttle, FR-006):** Модуль `LocationFilter` отсекает статическое дрожание координат (< 5м), троттлит частоту отправки (5с) с адаптивным энергосбережением (до 30с при заряде батареи $\le 15\%$), пространственным base32 Geohash (стандарт `geofire-common`) и мгновенным байпасом для сигналов SOS.
 * **🔐 Zero-Knowledge сквозное шифрование (E2EE) и цифровая подпись:** Реализация на базе W3C Web Crypto API: аутентифицированное шифрование AES-256-GCM AEAD для сообщений группового чата и телеметрии, цифровая подпись каждого пакета закрытым ключом Ed25519, защита от атак повторного воспроизведения (Anti-Replay) с монотонным sequence и 10-минутным окном свежести. Управление 256-битными симметричными ключами групп в IdentityManager.
-* **🛡️ Комплексная безопасность API и HTTP-заголовки (OWASP):** Скользящий Rate Limiter по IP-адресам для предотвращения DoS-атак и злоупотреблений, строгая валидация входящих тел запросов через Zod-схемы на границах всех API-эндпоинтов, санитизация серверных ошибок и продакшн-заголовки в `next.config.ts` (HSTS, CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, Permissions-Policy).
+* **🛡️ Комплексная безопасность API и HTTP-заголовки (OWASP):** Скользящий Rate Limiter по IP-адресам для предотвращения DoS-атак и злоупотреблений, строгая валидация входящих тел запросов через Zod-схемы на границах всех API-эндпоинтов (включая `/api/routes/classify`), санитизация серверных ошибок и продакшн-заголовки в `next.config.ts` (HSTS, CSP, X-Frame-Options: DENY, X-Content-Type-Options: nosniff, Referrer-Policy, Permissions-Policy).
 * **📡 Многоканальный отказоустойчивый транспорт (`TransportManager`):** Прозрачный каскадный маршрутизатор передачи данных: первичный интернет-канал (Cloud Firestore / HTTPS) ➔ радиосеть LoRa `MeshCore` (-70..-105 dBm) ➔ персистентная оффлайн-очередь store-and-forward (`OfflineQueue`) с автоматическим сбросом и дедупликацией при восстановлении связи.
-* **💾 Оффлайн-хранилище на IndexedDB и персистентный кэш Firestore (Требование 3.1.2):** Адаптер `IndexedDBQueueStorage` (`treeline_tracker_db`) с индексацией по времени/приоритетам и наивысшим приоритетом экстренных пакетов `EMERGENCY_SOS`. Полноценный кэш `persistentLocalCache` с `persistentMultipleTabManager` для Cloud Firestore.
 * **🧪 Хаос-симулятор полевых условий (`ChaosSimulator`):** Встроенная панель хаос-тестирования (FR-024) для моделирования экстремального высокогорья: глушение сотовой связи, экранирование радиоэфира, искусственная потеря пакетов (до 75%), сетевая задержка и критический разряд батареи (8%).
 * **📜 Прозрачный журнал аудита событий (`AuditLogger`):** Сквозной стриминг и экспорт структурированных системных событий по категориям `[GPS]`, `[SECURITY]`, `[TRANSPORT]`, `[OCC]`, `[AUTH]`, `[SOS]` в JSON-формате.
 * **🔀 Разрешение конфликтов (OCC Engine с авто-ретраем):** Оптимистическая блокировка версий (`validateAndIncrementVersion`) с автоматическим повтором мутаций (`withOccRetry`) для предотвращения затирания данных при одновременном редактировании треков несколькими гидами.
@@ -39,7 +42,7 @@
 * **🤖 Безопасный ИИ-поиск пропавших (SAR AI):** Построение вероятностных полигонов поиска с учетом рельефа и темпа движения через Genkit и Gemini 2.5 Flash с защитой от Prompt Injection, строгими Zod-схемами, Rate Limiting и неизменяемым аудиторским логом.
 * **🗺️ Интерактивная карта, BRouter-автомаршрутизация и кластеризация:** Отрисовка треков на Leaflet с кластеризацией участников (`leaflet.markercluster`), автоматической трассировкой пеших троп между точками А и Б, расчетом набора/сброса высоты и экспортом в GPX.
 * **📱 Адаптивный эргономичный интерфейс:** 5-кнопочная нижняя панель навигации для смартфонов (`Карта`, `Трекер`, `Маршруты`, `SOS`, `Меню`) с увеличенными тач-зонами (≥ 44×44px) для работы в перчатках.
-* **🧪 Автоматизированное тестирование (Vitest + RTL):** 100% прохождение **67 интеграционных и юнит-тестов по 7 сьютам** (криптография, сквозное E2EE, ролевой доступ, каскадный транспорт, OCC auto-retry, геозоны, оффлайн-очередь IndexedDB, санитизация Base64, rate limiting и рендеринг компонентов).
+* **🧪 Автоматизированное тестирование (Vitest + RTL):** 100% прохождение **152+ интеграционных и юнит-тестов по 13 сьютам** (криптография, сквозное E2EE, ролевой доступ, каскадный транспорт, OCC auto-retry, геозоны, оффлайн-очередь IndexedDB, санитизация Base64, rate limiting, физика рельефа, классификация маршрутов и рендеринг компонентов).
 
 ---
 
@@ -56,26 +59,29 @@
 ├── scripts/                # Скрипты автоматизации и проверки безопасности (secret-scan.mjs)
 ├── src/
 │   ├── app/                # [App Layer] Next.js App Router (layout.tsx, page.tsx, API /api/*)
-│   ├── views/              # [Views Layer] Полностраничные экраны (map-view, profile, about, emergency)
-│   ├── features/           # [Features Layer] Пользовательские фичи (group-management, hiker-search, expedition)
+│   ├── views/              # [Views Layer] Полностраничные модульные экраны (map-view, profile, about, emergency)
+│   ├── features/           # [Features Layer] Пользовательские функциональные блоки
+│   │   ├── route-drawing/  # Конструктор маршрутов, аналитика рельефа и форма сохранения
+│   │   ├── routing/        # Физика рельефа, классификация, Minetti/Tobler и BRouter сервисы
+│   │   ├── elevation/      # Сервис высот Open-Meteo DEM и топографическая интерполяция
+│   │   ├── hiker-search/   # ИИ-поиск пропавших (SAR AI)
+│   │   ├── expedition/     # Expedition Status Bar, телеметрия и модальные окна
+│   │   └── group-management/ # Управление туристическими группами и геозонами
 │   ├── entities/           # [Entities Layer] Доменные бизнес-сущности (group, route, hiker, app)
 │   ├── core/               # [Core Domain] Архитектурное ядро
 │   │   ├── domain/         # Интерфейсы доменных моделей и OCC engine (types.ts, schemas.ts, occ.ts)
 │   │   ├── location/       # Гео-фильтрация (location-filter.ts, geohash.ts, Haversine, Deadband, Throttle)
 │   │   ├── transport/      # Отказоустойчивый транспорт (TransportManager, OfflineQueue, IndexedDB, Chaos)
 │   │   ├── security/       # Криптографические протоколы (E2EE AES-GCM, Ed25519, ReplayProtection, api-security.ts)
-│   │   ├── repositories/   # Абстракции репозиториев (Firebase / LocalStorage)
+│   │   ├── repositories/   # Абстракции репозиториев (Firebase / LocalStorage) с защитой от зависаний
 │   │   └── utils/          # Вспомогательные утилиты ядра (gpx-exporter.ts)
 │   ├── ai/                 # [AI Subsystem] Конфигурация Genkit и модели Gemini 2.5 Flash
 │   ├── firebase/           # [Infrastructure] Клиентская инициализация Firebase SDK (persistentLocalCache)
-│   ├── shared/             # [Shared Layer] Переиспользуемая инфраструктура (UI, config, hooks, lib)
-│   ├── components/         # UI-компоненты и модальные виджеты приложения
-│   ├── test/               # Комплексные автотесты (67 тестов: location, offline, rbac, occ, security, e2ee)
-│   ├── hooks/              # Прикладные React-хуки (use-groups, use-routes, use-simulation)
-│   └── lib/                # Данные маршрутов, серверные БД-адаптеры и гео-вычисления
+│   ├── shared/             # [Shared Layer] Переиспользуемая инфраструктура (view-registry, offline-map-cache, UI, config)
+│   └── test/               # Комплексные автотесты (170 тестов в 14 сьютах: view registry, routing, terrain physics, security, offline, rbac)
 ├── .env.example            # Эталонный шаблон переменных окружения (без секретов)
 ├── .gitignore              # Исключения версионного контроля (.env*, .idx/, .modified, ключи)
-├── bun.lock                # Фиксация зависимостей для Bun
+├── package-lock.json       # Фиксация зависимостей
 ├── package.json            # Манифест зависимостей и команд запуска
 ├── firestore.rules         # Декларативные правила безопасности Cloud Firestore (RBAC)
 └── firebase-blueprint.json # Спецификация схемы данных Firestore
@@ -177,7 +183,7 @@ npm run dev
 | Скрипт (npm / Bun) | Описание и назначение | Когда запускать |
 |---|---|---|
 | `npm run dev` | Запуск локального сервера разработки на порту 3000 (Next.js Turbo/HMR). | Во время активной разработки интерфейса и API. |
-| `npm run test` | Запуск полного набора автоматических тестов (Vitest + RTL: 57 тестов по 6 сьютам). | **Обязательно перед созданием PR и коммитом.** |
+| `npm run test` | Запуск полного набора автоматических тестов (Vitest + RTL: 170 тестов по 14 сьютам). | **Обязательно перед созданием PR и коммитом.** |
 | `npm run test:watch` | Запуск Vitest в интерактивном watch-режиме с мгновенным перезапуском при изменениях. | При разработке новых тестов и TDD. |
 | `npm run typecheck` | Строгая проверка типов TypeScript (`tsc --noEmit`). | Перед каждым коммитом и в CI конвейере. |
 | `npm run lint` | Проверка кода линтером ESLint 9 на соответствие кодстайлу. | Перед коммитом и в CI пайплайне. |
@@ -192,7 +198,7 @@ npm run dev
 ## 📚 Документация проекта
 
 * 📐 [Архитектурная спецификация (C4, RBAC, Firestore схемы, OCC)](./docs/architecture.md)
-* 📋 [Функциональные требования (FR-001 – FR-025)](./docs/02-requirements/functional.md)
+* 📋 [Функциональные требования (FR-001 – FR-032)](./docs/02-requirements/functional.md)
 * ✅ [Критерии приемки и Definition of Done (AC-01 – AC-08)](./docs/02-requirements/acceptance-criteria.md)
 * 🗺️ [Матрица прослеживаемости (Traceability Matrix)](./docs/09-project-management/traceability-matrix.md)
 * 🔐 [Модель угроз и безопасность](./docs/04-security/threat-model.md)

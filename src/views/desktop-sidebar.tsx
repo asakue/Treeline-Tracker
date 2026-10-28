@@ -5,14 +5,6 @@ import Image from 'next/image';
 import {
   Mountain,
   PanelLeft,
-  Users,
-  MessageSquare,
-  CloudSun,
-  Waypoints,
-  BarChart3,
-  Search,
-  Map,
-  Siren,
   Info,
   Code,
   User,
@@ -30,57 +22,9 @@ import {
 } from '@/shared/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { cn } from '@/shared/lib/utils';
-import { useAppContext, type View } from '@/entities/app';
+import { useAppContext } from '@/entities/app';
+import { getDesktopPrimaryNav, getDesktopSafetyNav } from '@/shared/lib/view-registry';
 
-
-const menuItems = [
-  { id: 'map' as View, icon: Map, label: 'Карта', tooltip: 'Карта' },
-  {
-    id: 'tracker' as View,
-    icon: Users,
-    label: 'Трекер',
-    tooltip: 'Трекер группы',
-  },
-  {
-    id: 'routes' as View,
-    icon: Waypoints,
-    label: 'Маршруты',
-    tooltip: 'Планировщик маршрутов',
-  },
-  {
-    id: 'analytics' as View,
-    icon: BarChart3,
-    label: 'Отчёты / Аналитика',
-    tooltip: 'Сводный отчёт по походам (ФЗ-05)',
-  },
-  {
-    id: 'chat' as View,
-    icon: MessageSquare,
-    label: 'Чат',
-    tooltip: 'Групповой чат',
-  },
-  {
-    id: 'weather' as View,
-    icon: CloudSun,
-    label: 'Погода',
-    tooltip: 'Прогноз погоды',
-  },
-];
-
-const secondaryMenuItems = [
-  {
-    id: 'search' as View,
-    icon: Search,
-    label: 'SOS Поиск',
-    tooltip: 'Поиск туриста',
-  },
-  {
-    id: 'emergency' as View,
-    icon: Siren,
-    label: 'Вызов служб',
-    tooltip: 'Вызов служб',
-  },
-];
 
 const DesktopSidebar = memo(() => {
   const { activeView, setView, userProfile } = useAppContext();
@@ -108,7 +52,7 @@ const DesktopSidebar = memo(() => {
 
       <SidebarContent className="flex flex-col p-2">
         <SidebarMenu>
-          {menuItems.map(({ id, icon: Icon, label, tooltip }) => (
+          {getDesktopPrimaryNav().map(({ id, icon: Icon, label, tooltip }) => (
             <SidebarMenuItem key={`desktop-nav-${id}`}>
               <SidebarMenuButton
                 onClick={() => setView(id)}
@@ -123,7 +67,7 @@ const DesktopSidebar = memo(() => {
             </SidebarMenuItem>
           ))}
           <SidebarSeparator key="sidebar-menu-separator" className="my-2" />
-          {secondaryMenuItems.map(
+          {getDesktopSafetyNav().map(
             ({ id, icon: Icon, label, tooltip }) => (
               <SidebarMenuItem key={`desktop-sec-${id}`}>
                 <SidebarMenuButton

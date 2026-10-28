@@ -22,18 +22,26 @@ export default function Page() {
       } else {
         const timer = setTimeout(() => {
           setLoading(false);
-          sessionStorage.setItem(PRELOADER_KEY, 'true');
-        }, 3000); 
+          try {
+            sessionStorage.setItem(PRELOADER_KEY, 'true');
+          } catch {
+            // ignore
+          }
+        }, 600); 
         return () => clearTimeout(timer);
       }
-    } catch (error) {
+    } catch {
       // In case sessionStorage is not available (e.g., in some privacy modes)
       setLoading(false);
     }
   }, []);
 
   if (loading) {
-    return <Preloader />;
+    return (
+      <div onClick={() => setLoading(false)} className="cursor-pointer">
+        <Preloader />
+      </div>
+    );
   }
 
   return (

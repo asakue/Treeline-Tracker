@@ -6,8 +6,27 @@
 import type { IRouteRepository } from './interfaces';
 import type { Route } from '../domain/types';
 import { RouteSchema } from '../domain/schemas';
+import { Rbac } from '../security/rbac-service';
 
 const STORAGE_KEY = 'hiker_routes_data';
+
+function toApiUrl(path: string): string {
+  if (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+    try {
+      return new URL(path, window.location.origin).toString();
+    } catch {
+      // fallback
+    }
+  }
+  return path.startsWith('http') ? path : `http://localhost:3000${path}`;
+}
+
+function getAuthHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...extra,
+    ...(typeof window !== 'undefined' ? Rbac.getAuthHeaders() : {}),
+  };
+}
 
 export class LocalStorageRouteRepository implements IRouteRepository {
   private isClient(): boolean {
@@ -43,7 +62,10 @@ export class LocalStorageRouteRepository implements IRouteRepository {
 
       // Sync from server if local storage is empty
       try {
-        const res = await fetch('/api/routes?includeArchived=true');
+        const res = await fetch(toApiUrl('/api/routes?includeArchived=true'), {
+          headers: getAuthHeaders(),
+          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(2000) : undefined,
+        });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -79,9 +101,9 @@ export class LocalStorageRouteRepository implements IRouteRepository {
 
     // Sync to server in background
     if (this.isClient()) {
-      fetch('/api/routes', {
+      fetch(toApiUrl('/api/routes'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(validated),
       }).catch((e) => console.warn('Failed to sync route to server:', e));
     }
@@ -115,9 +137,9 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     this.save(updated);
 
     if (this.isClient()) {
-      fetch('/api/routes', {
+      fetch(toApiUrl('/api/routes'), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(withOcc),
       }).catch((e) => console.warn('Failed to sync route update to server:', e));
     }
@@ -149,9 +171,9 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     this.save(updated);
 
     if (this.isClient()) {
-      fetch('/api/routes', {
+      fetch(toApiUrl('/api/routes'), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(validated),
       }).catch((e) => console.warn('Failed to sync route archive to server:', e));
     }
@@ -176,9 +198,9 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     this.save(updated);
 
     if (this.isClient()) {
-      fetch('/api/routes', {
+      fetch(toApiUrl('/api/routes'), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(validated),
       }).catch((e) => console.warn('Failed to sync route restore to server:', e));
     }
@@ -193,8 +215,9 @@ export class LocalStorageRouteRepository implements IRouteRepository {
     this.save(filtered);
 
     if (this.isClient()) {
-      fetch(`/api/routes?id=${encodeURIComponent(id)}`, {
+      fetch(toApiUrl(`/api/routes?id=${encodeURIComponent(id)}`), {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       }).catch((e) => console.warn('Failed to sync route delete to server:', e));
     }
 

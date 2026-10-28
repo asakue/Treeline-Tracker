@@ -7,62 +7,10 @@ import {
 } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Separator } from '@/shared/ui/separator';
-import {
-  Users,
-  MessageSquare,
-  CloudSun,
-  Waypoints,
-  BarChart3,
-  Search,
-  Info,
-  Code,
-  User,
-} from 'lucide-react';
+import { User } from 'lucide-react';
 import type { View } from '@/entities/app';
 import { useAppContext } from '@/entities/app';
-
-const menuItems = [
-  {
-    id: 'chat' as View,
-    icon: MessageSquare,
-    label: 'Групповой чат (E2EE)',
-  },
-  {
-    id: 'tracker' as View,
-    icon: Users,
-    label: 'Трекер группы',
-  },
-  {
-    id: 'routes' as View,
-    icon: Waypoints,
-    label: 'Планировщик маршрутов',
-  },
-  {
-    id: 'analytics' as View,
-    icon: BarChart3,
-    label: 'Сводный отчёт и аналитика',
-  },
-  {
-    id: 'weather' as View,
-    icon: CloudSun,
-    label: 'Прогноз погоды',
-  },
-  {
-    id: 'search' as View,
-    icon: Search,
-    label: 'Поиск пропавшего туриста',
-  },
-  {
-    id: 'about' as View,
-    icon: Info,
-    label: 'О нас',
-  },
-  {
-    id: 'about-app' as View,
-    icon: Code,
-    label: 'О приложении',
-  },
-];
+import { getMobileDrawerItems } from '@/shared/lib/view-registry';
 
 type MobileMenuProps = {
   onNavigate: (view: View) => void;
@@ -100,7 +48,7 @@ export default function MobileMenu({ onNavigate }: MobileMenuProps) {
       </div>
       <Separator className="mb-4" />
       <div className="grid grid-cols-1 gap-2">
-        {menuItems.map(({ id, icon: Icon, label }) => (
+        {getMobileDrawerItems().map(({ id, icon: Icon, label }) => (
           <Button
             key={id}
             variant={activeView === id ? 'secondary' : 'ghost'}

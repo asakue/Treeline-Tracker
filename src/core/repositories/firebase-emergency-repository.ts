@@ -17,6 +17,17 @@ import { EmergencyEventSchema } from '../domain/schemas';
 import { getFirestoreInstance, isFirebaseConfigured } from '@/firebase';
 import { LocalStorageEmergencyRepository } from './local-storage-emergency-repository';
 
+const FIRESTORE_TIMEOUT_MS = 2000;
+
+function withFirestoreTimeout<T>(promise: Promise<T>, ms = FIRESTORE_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Firestore request timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export class FirebaseEmergencyRepository implements IEmergencyRepository {
   private fallback: LocalStorageEmergencyRepository;
   private collectionName = 'emergency_events';
@@ -41,7 +52,7 @@ export class FirebaseEmergencyRepository implements IEmergencyRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, id);
-      const snap = await getDoc(docRef);
+      const snap = await withFirestoreTimeout(getDoc(docRef));
       if (snap.exists()) {
         const data = snap.data();
         return EmergencyEventSchema.parse({ id: snap.id, ...data });
@@ -121,7 +132,7 @@ export class FirebaseEmergencyRepository implements IEmergencyRepository {
 
     try {
       const colRef = collection(firestore, this.collectionName);
-      const snapshot = await getDocs(colRef);
+      const snapshot = await withFirestoreTimeout(getDocs(colRef));
       if (snapshot.empty) return this.fallback.getAllEvents();
 
       const events: EmergencyEvent[] = [];

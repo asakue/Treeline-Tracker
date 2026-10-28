@@ -97,7 +97,7 @@ export const EmergencyEventSchema = z.object({
     longitude: z.number().min(-180).max(180),
     altitude: z.number().optional(),
     accuracy: z.number().nonnegative().optional(),
-  }),
+  }).optional(),
   type: z.enum(['SOS_SIGNAL', 'MEDICAL_EMERGENCY', 'LOST_PERSON', 'GEAR_FAILURE', 'WEATHER_HAZARD']),
   message: z.string(),
   status: z.enum(['ACTIVE', 'ACKNOWLEDGED', 'RESOLVED']).default('ACTIVE'),

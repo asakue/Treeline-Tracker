@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import 'leaflet.markercluster';
+// Ensure global L is available before leaflet plugins load
+if (typeof window !== 'undefined') {
+  (window as any).L = L;
+  try {
+    require('leaflet.markercluster');
+  } catch (err) {
+    console.warn('[MapView] MarkerCluster plugin load notice:', err);
+  }
+}
 import { useAppContext } from '@/entities/app';
 import { 
   createStartPopupContent, 

@@ -7,25 +7,44 @@
 
 ## 1. Концепция и структура слоев
 
-Фронтенд спроектирован на базе Next.js 15 (App Router) и React 18 с ориентацией на модульность и компонентную изоляцию.
+Фронтенд спроектирован на базе Next.js 15 (App Router) и React 18 с ориентацией на модульность, компонентную изоляцию и Feature-Sliced Design (FSD).
 
-### Структурные модули:
+### Архитектурные уровни:
 - **`src/views/`** — композиционные экраны верхнего уровня (`MapView`, `RoutePlanner`, `LocationTracker`, `EmergencyServices`, `GroupChat`, `ProfilePage`, `WeatherForecast`).
-- **`src/features/`** — интерактивные функциональные блоки со своим состоянием (`route-drawing`, `hiker-search`, `group-management`, `emergency-services`).
+- **`src/features/view-registry/`** — централизованный реестр экранов (`view-registry.ts`) с поддержкой динамического ленивого бандлинга (`React.lazy`), метаданных навигации и независимых предохранителей ошибок (`ViewErrorBoundary`).
+- **`src/features/`** — интерактивные функциональные блоки со своим состоянием (`route-drawing`, `routing`, `elevation`, `hiker-search`, `group-management`, `emergency-services`).
 - **`src/entities/`** — доменные сущности с типами и репозиториями (`hiker`, `group`, `route`, `app`).
 - **`src/shared/`** — переиспользуемые UI-компоненты (shadcn/ui), утилиты, хуки и конфигурация темы.
 
+### Изоляция представлений (View Registry & ViewErrorBoundary)
+Вместо жестких статических импортов экранов в единый монолитный файл развернут реестр `viewRegistry`:
+* Все представления подгружаются асинхронно через `React.lazy()`.
+* Каждое представление изолировано внутри `ViewErrorBoundary`. Фатальная ошибка рендеринга на одном экране не обрушивает приложение — отображается эргономичный экран восстановления с возможностью безопасного перезапуска, а фоновые службы трекинга и SOS продолжают работу.
+* Главная навигация приложения рендерится декларативно на основе зарегистрированных представлений с учетом ролей RBAC.
+
 ---
 
-## 2. Картографическая подсистема (Leaflet Engine)
+## 2. Картографическая подсистема (Leaflet Engine & Terrain Physics)
 
 Карта является центральным элементом визуализации:
 - Использование динамического импорта (`dynamic(() => import(...), { ssr: false })`) для предотвращения ошибок SSR с объектом `window` и Leaflet.
-- Рендеринг слоев:
+- **Оффлайн-кэширование тайлов (IndexedDB & Service Worker):**
+  - Модуль `src/core/map/offline-map-cache.ts` сохраняет просмотренные тайлы OpenStreetMap в локальное хранилище IndexedDB `treeline_map_tiles_cache`.
+  - Service Worker (`public/sw.js`) перехватывает сетевые запросы тайлов и мгновенно отдает их из кэша при потере связи.
+- **Рендеринг слоев:**
   - **Слой трека (Polylines):** Плановый маршрут с контрольными точками и высотным профилем.
   - **Слой участников (Markers):** Интерактивные маркеры с аватарами, направлением движения и статусом связи (LTE / Mesh / Offline).
   - **Слой геозон безопасности (Geofences):** Динамическая окружность безопасного радиуса группы (`safeRadiusMeters`), отцентрированная на маркере лидера. При удалении участника свыше радиуса статус меняется на `BREACH`, окружность окрашивается в красный цвет и выводится плавающий баннер тревоги с записью в `AuditLogger`.
   - **Слой поисковых секторов (Search Zones):** Полигоны вероятных областей нахождения потерявшегося туриста, рассчитанные ИИ Genkit/Gemini.
+- **Интерактивная аналитика рельефа (`RouteTerrainAnalyticsModal`):**
+  - Встроенное модальное окно глубокого физико-рельефного анализа трека.
+  - Высотный профиль с градиентной шкалой крутизны уклонов.
+  - Биомеханический расчет энергозатрат человека по полиному Минетти ($C_w$ в ккал с учетом массы туриста и рюкзака).
+  - Расчет ходового времени по функции темпа Тоблера с адаптивными штрафами за крутые подъемы ($> 25\%$).
+  - Автоматическая классификация сложности по альпийской шкале SAC (T1–T4).
+- **Zero-Select Architecture (Автономная классификация):**
+  - Полный отказ от ручного выбора региона и профиля в интерфейсе планировщика.
+  - При установке точек трека функции `detectRouteRegion` и `autoDetectRoutingProfile` автоматически определяют горную систему и оптимальный профиль проходимости.
 
 ---
 
@@ -62,12 +81,18 @@
 
 Для фронтенда развернута тестовая инфраструктура на базе **Vitest 4.x**, **React Testing Library** и **JSDOM**:
 - Настройка тестовой среды: `vitest.config.ts`, подключение расширений DOM-ассершенов (`@testing-library/jest-dom/vitest`), изоляция localStorage для Node 20+.
-- Всего развернуто 7 сьютов автоматических тестов (**67 тестов, 100% pass**):
+- Всего развернуто 14 сьютов автоматических тестов (**170 тестов, 100% pass**):
   - `src/views/__tests__/profile-page.test.tsx` (16 тестов) — расчет прогресса профиля (0%–100%), ротация ключей Ed25519, приватность.
-  - `src/core/security/__tests__/security-phase2.test.ts` (14 тестов, 39 ассертов) — криптостойкость E2EE AEAD, подписи Ed25519, защита от replay-атак.
+  - `src/test/profile-page.test.tsx` (6 тестов) — базовые проверки профиля и модальных окон.
+  - `src/test/view-registry-and-error-boundary.test.tsx` (11 тестов) — модульный реестр представлений `VIEW_REGISTRY`, структура навигации (Desktop / Mobile / Safety), изоляция сбоев `ViewErrorBoundary` и восстановление экрана.
+  - `src/features/routing/__tests__/terrain-physics.test.ts` (21 тест) — физика рельефа, полином Минетти (ккал), темп Тоблера, шкала SAC T1–T4.
+  - `src/features/routing/__tests__/auto-classification.test.ts` (24 теста) — полигональное автоопределение горных регионов, профилей и сложности.
+  - `src/core/location/__tests__/route-navigation-and-debounce.test.ts` (18 тестов) — дебаунс геолокации и навигационные вычисления.
+  - `src/core/security/__tests__/security-phase2.test.ts` (1 сьют, 39 ассертов) — криптостойкость E2EE AEAD, подписи Ed25519, защита от replay-атак.
   - `src/core/security/__tests__/backend-security-e2ee.test.ts` (9 тестов) — байпас огрубления при SOS, отказоустойчивость Base64, управление ключами групп AES-256 в IdentityManager, Rate Limiting и валидация.
+  - `src/test/resilience-and-rbac.test.ts` (18 тестов) — OCC блокировка версий, ролевой доступ RBAC, TOTP MFA, отказоустойчивость транспорта и сброс оффлайн-буфера.
+  - `src/test/location-and-offline.test.ts` (16 тестов) — deadband/throttle фильтры локации, Geohash spatial hashing, геозоны safeRadiusMeters, IndexedDB оффлайн-очередь и LocalStorage fallback.
+  - `src/test/api-security-and-weather.test.ts` (18 тестов) — безопасность API, лимиты скорости, кэширование метеоданных, защита от SSRF.
+  - `src/test/firebase-firestore-and-hosting.test.ts` (8 тестов) — репозитории Firestore с защитой `withFirestoreTimeout` (2000мс).
+  - `src/app/api/routes/classify/__tests__/route.test.ts` (3 теста) — валидация API автоклассификации.
   - `src/core/utils/__tests__/gpx-exporter.test.ts` (1 тест) — экспорт валидных GPX XML треков.
-  - `src/test/profile-page.test.tsx` (6 тестов) — базовые проверки профиля.
-  - `src/test/resilience-and-rbac.test.ts` (4 теста) — OCC блокировка версий, ролевой доступ RBAC, TOTP MFA, отказоустойчивость транспорта.
-  - `src/test/location-and-offline.test.ts` (17 тестов) — deadband/throttle фильтры локации, Geohash spatial hashing, геозоны safeRadiusMeters, IndexedDB оффлайн-очередь и LocalStorage fallback.
-

@@ -7,6 +7,7 @@ import {
   persistentLocalCache,
   persistentMultipleTabManager,
   getFirestore,
+  setLogLevel,
   type Firestore,
 } from 'firebase/firestore';
 import { firebaseConfig, isFirebaseConfigured } from './config';
@@ -16,6 +17,14 @@ let auth: Auth | undefined;
 let firestore: Firestore | undefined;
 
 export function initializeFirebase() {
+  if (typeof window !== 'undefined') {
+    try {
+      setLogLevel('error');
+    } catch {
+      // ignore
+    }
+  }
+
   if (!isFirebaseConfigured()) {
     // When Firebase credentials are not yet configured in .env, operate in offline/local fallback
     return {

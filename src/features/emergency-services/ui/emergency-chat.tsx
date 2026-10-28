@@ -4,11 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
-import { Send, Phone, ArrowLeft } from 'lucide-react';
+import { Send, Phone, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/shared/ui/scroll-area';
 import { cn } from '@/shared/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/ui/card';
 import { useToast } from '@/shared/hooks/use-toast';
+import { TransportManager } from '@/core/transport/transport-manager';
 
 interface EmergencyMessage {
   id: string;
@@ -22,9 +23,9 @@ interface EmergencyMessage {
 const initialMessages: EmergencyMessage[] = [
   {
     id: '1',
-    name: 'Дежурный МЧС',
+    name: 'Система Treeline SOS',
     avatar: '',
-    text: 'Экстренная служба МЧС на связи. Канал экстренной связи открыт. Опишите характер ситуации и ваше текущее состояние.',
+    text: 'Экстренный канал связи открыт. Сообщения транслируются спасателям и участникам группы по mesh-сети и интернет-шлюзу. В критической ситуации незамедлительно вызывайте 112.',
     time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
     isSender: false,
   },
@@ -74,14 +75,26 @@ export default function EmergencyChat({ onBack }: EmergencyChatProps) {
     return () => clearTimeout(timer);
   }, [messagesList.length]);
 
-  const handleSendMessage = () => {
-    if (!inputText.trim()) return;
+  const handleSendMessage = async () => {
+    const text = inputText.trim();
+    if (!text) return;
+
+    let senderName = 'Вы';
+    let senderId = 'user-emergency';
+    try {
+      const stored = localStorage.getItem('treeline_user_profile');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        senderName = parsed.displayName || senderName;
+        senderId = parsed.userId || parsed.id || senderId;
+      }
+    } catch {}
 
     const userMsg: EmergencyMessage = {
       id: `em-${Date.now()}`,
-      name: 'Вы',
+      name: senderName,
       avatar: 'https://picsum.photos/seed/user/40/40',
-      text: inputText.trim(),
+      text,
       time: new Date().toLocaleTimeString('ru-RU', {
         hour: '2-digit',
         minute: '2-digit',
@@ -92,34 +105,44 @@ export default function EmergencyChat({ onBack }: EmergencyChatProps) {
     setMessagesList((prev) => [...prev, userMsg]);
     setInputText('');
 
-    // Simulate realistic response from emergency dispatcher after 1.5s
-    setTimeout(() => {
-      const responses = [
-        'Сообщение принято. Диспетчер МЧС зафиксировал ваши данные. Спасательная группа ориентирована.',
-        'Ваш сигнал в приоритете. Пожалуйста, экономьте заряд аккумулятора и оставайтесь на открытом месте.',
-        'Информация передана дежурному координатору поисково-спасательного отряда. Мы отслеживаем ваши координаты.',
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      const dispatcherMsg: EmergencyMessage = {
-        id: `em-disp-${Date.now()}`,
-        name: 'Диспетчер',
-        avatar: 'https://picsum.photos/seed/dispatcher/40/40',
-        text: randomResponse,
-        time: new Date().toLocaleTimeString('ru-RU', {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        isSender: false,
-      };
-      setMessagesList((prev) => [...prev, dispatcherMsg]);
-    }, 1500);
+    try {
+      await TransportManager.sendPacket({
+        type: 'SOS_ALERT',
+        priority: 'EMERGENCY_SOS',
+        timestamp: Date.now(),
+        payload: {
+          senderId,
+          senderName,
+          timestamp: Date.now(),
+          type: 'SOS_SIGNAL',
+          message: text,
+          status: 'ACTIVE',
+          acknowledgedBy: [],
+        },
+      });
+
+      toast({
+        title: 'Экстренное сообщение передано',
+        description: 'Сигнал транслирован по каналам Treeline (Mesh/Web).',
+      });
+    } catch (err) {
+      console.warn('Transport manager SOS message dispatch error:', err);
+      toast({
+        title: 'Ошибка отправки',
+        description: 'Не удалось передать сообщение в сеть. Попробуйте набрать 112.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleCall = () => {
     toast({
-      title: 'Выполняется экстренный вызов...',
-      description: 'Соединение с диспетчерской службой 112 (МЧС).',
+      title: 'Вызов экстренной службы 112',
+      description: 'Инициализация прямого телефонного вызова 112...',
     });
+    if (typeof window !== 'undefined') {
+      window.location.href = 'tel:112';
+    }
   };
 
   return (
@@ -137,7 +160,7 @@ export default function EmergencyChat({ onBack }: EmergencyChatProps) {
             </Button>
             <div className="text-center min-w-0">
               <CardTitle className="text-destructive-foreground text-base sm:text-lg truncate">Экстренный чат</CardTitle>
-              <CardDescription className="text-destructive-foreground/80 text-[11px] sm:text-xs truncate">Чат с оперативным диспетчером 112</CardDescription>
+              <CardDescription className="text-destructive-foreground/80 text-[11px] sm:text-xs truncate">Канал экстренной связи Treeline</CardDescription>
             </div>
             <Button
               variant="outline"
@@ -148,6 +171,10 @@ export default function EmergencyChat({ onBack }: EmergencyChatProps) {
               <Phone className="mr-1.5 size-3.5 sm:size-4" />
               112
             </Button>
+          </div>
+          <div className="mt-2 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-destructive/20 text-destructive-foreground text-[11px]">
+            <AlertTriangle className="size-3.5 shrink-0" />
+            <span>Экстренный mesh-канал связи. Для прямого вызова государственных служб спасения нажмите «112».</span>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col flex-1 gap-3 p-3 sm:p-6 pt-0 sm:pt-0 overflow-hidden">

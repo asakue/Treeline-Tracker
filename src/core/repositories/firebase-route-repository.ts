@@ -18,6 +18,17 @@ import { RouteSchema } from '../domain/schemas';
 import { getFirestoreInstance, isFirebaseConfigured } from '@/firebase';
 import { LocalStorageRouteRepository } from './local-storage-route-repository';
 
+const FIRESTORE_TIMEOUT_MS = 2000;
+
+function withFirestoreTimeout<T>(promise: Promise<T>, ms = FIRESTORE_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Firestore request timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export class FirebaseRouteRepository implements IRouteRepository {
   private fallback: LocalStorageRouteRepository;
   private collectionName = 'routes';
@@ -39,7 +50,7 @@ export class FirebaseRouteRepository implements IRouteRepository {
 
     try {
       const colRef = collection(firestore, this.collectionName);
-      const snapshot = await getDocs(colRef);
+      const snapshot = await withFirestoreTimeout(getDocs(colRef));
       if (snapshot.empty) {
         const local = await this.fallback.getRoutes(includeArchived);
         if (local.length > 0) {
@@ -66,8 +77,8 @@ export class FirebaseRouteRepository implements IRouteRepository {
       });
 
       return routes;
-    } catch (err) {
-      console.warn('[FirebaseRouteRepository] Firestore error, falling back to local storage:', err);
+    } catch {
+      // Unauthenticated or offline: gracefully serve from resilient local storage
       return this.fallback.getRoutes(includeArchived);
     }
   }
@@ -88,14 +99,13 @@ export class FirebaseRouteRepository implements IRouteRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, id);
-      const snap = await getDoc(docRef);
+      const snap = await withFirestoreTimeout(getDoc(docRef));
       if (snap.exists()) {
         const data = snap.data();
         return RouteSchema.parse({ id: snap.id, ...data });
       }
       return this.fallback.getRouteById(id);
     } catch (err) {
-      console.warn(`[FirebaseRouteRepository] Firestore getRouteById(${id}) error:`, err);
       return this.fallback.getRouteById(id);
     }
   }
@@ -110,14 +120,15 @@ export class FirebaseRouteRepository implements IRouteRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, validated.id);
-      await setDoc(docRef, {
-        ...validated,
-        version: validated.version || 1,
-        updatedAt: Date.now(),
-      });
+      await withFirestoreTimeout(
+        setDoc(docRef, {
+          ...validated,
+          version: validated.version || 1,
+          updatedAt: Date.now(),
+        })
+      );
       return validated;
     } catch (err) {
-      console.warn('[FirebaseRouteRepository] Firestore createRoute error:', err);
       return validated;
     }
   }
@@ -136,10 +147,9 @@ export class FirebaseRouteRepository implements IRouteRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, validated.id);
-      await setDoc(docRef, validated, { merge: true });
+      await withFirestoreTimeout(setDoc(docRef, validated, { merge: true }));
       return validated;
     } catch (err) {
-      console.warn('[FirebaseRouteRepository] Firestore updateRoute error:', err);
       return validated;
     }
   }
@@ -179,10 +189,9 @@ export class FirebaseRouteRepository implements IRouteRepository {
 
     try {
       const docRef = doc(firestore, this.collectionName, id);
-      await deleteDoc(docRef);
+      await withFirestoreTimeout(deleteDoc(docRef));
       return true;
     } catch (err) {
-      console.warn(`[FirebaseRouteRepository] Firestore deleteRoute(${id}) error:`, err);
       return false;
     }
   }

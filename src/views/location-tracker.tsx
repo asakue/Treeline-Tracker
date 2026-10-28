@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/avatar";
 import { Badge } from "@/shared/ui/badge";
@@ -31,6 +31,7 @@ import { useRoutes } from "@/entities/route";
 import CreateGroupForm from "@/features/group-management/ui/create-group-form";
 import type { Group } from "@/entities/group";
 import { useToast } from "@/shared/hooks/use-toast";
+import { downloadAreaMapTiles, getOfflineMapMetadata } from "@/shared/lib/offline-map-cache";
 
 const difficultyStyles = {
   'Легко': 'bg-green-500/10 text-green-400 border-green-500/20',
@@ -73,19 +74,65 @@ export default function LocationTracker() {
   const [groupToDelete, setGroupToDelete] = useState<Group | null>(null);
   const [isDownloadingMap, setIsDownloadingMap] = useState(false);
   const [isMapDownloaded, setIsMapDownloaded] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+
+  useEffect(() => {
+    const meta = getOfflineMapMetadata();
+    if (meta && meta.tileCount > 0) {
+      setIsMapDownloaded(true);
+    }
+  }, []);
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId) || groups[0];
 
-  const handleDownloadOfflineMap = () => {
+  const handleDownloadOfflineMap = async () => {
     setIsDownloadingMap(true);
-    setTimeout(() => {
-      setIsDownloadingMap(false);
-      setIsMapDownloaded(true);
-      toast({
-        title: 'Офлайн-карта сохранена',
-        description: 'Тайлы карты, тропы и высотные данные перевала загружены в локальный кэш.',
+    setDownloadProgress(0);
+
+    const firstHiker = selectedGroup?.hikers?.find((h) => h.lastLocation || h.coords);
+    let centerLat = 43.5;
+    let centerLon = 42.0;
+    if (firstHiker?.lastLocation) {
+      centerLat = firstHiker.lastLocation.latitude;
+      centerLon = firstHiker.lastLocation.longitude;
+    } else if (firstHiker?.coords) {
+      const parsed = parseCoords(firstHiker.coords);
+      if (parsed) {
+        centerLat = parsed[0];
+        centerLon = parsed[1];
+      }
+    }
+
+    try {
+      const res = await downloadAreaMapTiles(centerLat, centerLon, (p) => {
+        setDownloadProgress(p.percent);
       });
-    }, 1500);
+
+      setIsDownloadingMap(false);
+      setDownloadProgress(null);
+
+      if (res.success) {
+        setIsMapDownloaded(true);
+        toast({
+          title: 'Офлайн-карта сохранена в кэш',
+          description: `Успешно загружено ${res.count} тайлов карты для перевала и окрестностей. Карта доступна без интернета.`,
+        });
+      } else {
+        toast({
+          title: 'Не удалось загрузить карту',
+          description: res.error || 'Проверьте соединение с интернетом.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      setIsDownloadingMap(false);
+      setDownloadProgress(null);
+      toast({
+        title: 'Ошибка кэширования',
+        description: String(err),
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSetSelectedGroup = (id: string) => {
@@ -365,9 +412,9 @@ export default function LocationTracker() {
             >
               <Download className="size-4" />
               {isDownloadingMap
-                ? 'Загрузка тайлов перевала...'
+                ? `Загрузка тайлов (${downloadProgress !== null ? `${downloadProgress}%` : 'кэширование'}...)`
                 : isMapDownloaded
-                ? 'Обновить карту перевала (сохранено)'
+                ? 'Обновить карту перевала (кэш активен)'
                 : 'Скачать карту перевала'}
             </Button>
         </CardContent>

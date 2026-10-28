@@ -4,6 +4,29 @@ All notable changes to the **Treeline Tracker** project are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.4] - 2026-10-28
+
+### Added
+- **Autonomous Geographic & Terrain Classification (ADR-010 / Zero-Select Architecture)**:
+  - Eliminated manual region, routing profile, and difficulty dropdown selectors from the route planning workflow.
+  - Implemented `detectRouteRegion` supporting automated polygonal bounding box classification for Caucasus, Altai, Khibiny, Urals, Baikal, Kamchatka, and Sayany mountain systems.
+  - Implemented `autoDetectRoutingProfile` and `autoDetectDifficulty` mapping route coordinates and DEM elevation statistics directly to Swiss Alpine Club (SAC) hiking scale categories (`T1` through `T4`).
+  - Added REST endpoint `/api/routes/classify` with Zod schema validation (`ClassifyRouteRequestSchema`), 100 rpm per-IP rate limiting, and zero outbound network calls (Zero-SSRF).
+- **Advanced Terrain Physics & Biomechanical Metabolic Modeling**:
+  - Implemented Alberto E. Minetti metabolic polynomial ($C_w = 280.5 \cdot i^5 - 58.7 \cdot i^4 - 289.2 \cdot i^3 + 60.1 \cdot i^2 + 52.8 \cdot i + 284.3$ J/(kg·km)) calculating realistic calorie expenditure based on hiker body mass, backpack weight, and directional slope gradient.
+  - Implemented Tobler's Hiking Function ($W = 6 \cdot \exp(-3.5 \cdot |\tan(\theta) + 0.05|)$ km/h) with slope gradient fatigue penalties for steep ascents (>25%).
+  - Added interactive `RouteTerrainAnalyticsModal` (`src/features/route-drawing/ui/route-terrain-analytics-modal.tsx`) visualizing elevation profiles, slope gradient histograms, energy expenditure, and estimated travel times.
+- **Modular View Registry & Fault-Tolerant Error Boundaries (ADR-011)**:
+  - Created `ViewRegistry` (`src/features/view-registry/view-registry.ts`) decoupling page implementations from monolithic routing components and enabling route code splitting via `React.lazy()`.
+  - Implemented `ViewErrorBoundary` (`src/features/view-registry/ui/view-error-boundary.tsx`) providing isolated recovery UI per view and preventing single-widget rendering failures from breaking application state or background SOS tracking.
+- **Offline Map Tile Caching & Zero-Hang Firestore Resilience**:
+  - Implemented IndexedDB tile cache (`treeline_map_tiles_cache`) in `src/core/map/offline-map-cache.ts` coupled with Service Worker (`public/sw.js`) for seamless offline OpenStreetMap rendering.
+  - Implemented `withFirestoreTimeout` (2000ms threshold) wrapping all Firestore repository operations (`firebase-route-repository.ts`, `firebase-group-repository.ts`, `firebase-emergency-repository.ts`) to eliminate 10-second client hangs during offline mountain use.
+  - Added `setLogLevel('error')` to Firestore configuration in `src/firebase/index.ts` eliminating noisy connection timeout warnings.
+- **Substantial Test Suite Expansion**:
+  - Expanded automated test coverage from 67 tests across 7 suites to **170 passing tests across 14 test suites (100% pass rate)**.
+  - Added dedicated test suites: `view-registry-and-error-boundary.test.tsx` (11 tests), `terrain-physics.test.ts` (21 tests), `auto-classification.test.ts` (24 tests), `classify/route.test.ts` (3 tests), and expanded resilience and Firebase repository tests.
+
 ## [0.5.3] - 2026-10-20
 
 ### Added

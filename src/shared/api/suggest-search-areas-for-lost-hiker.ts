@@ -14,11 +14,14 @@ export interface SuggestSearchAreasOutput {
   searchAreaPolygon: [number, number][];
 }
 
+import { Rbac } from '@/core/security/rbac-service';
+
 export async function suggestSearchAreas(input: SuggestSearchAreasInput): Promise<SuggestSearchAreasOutput> {
   const response = await fetch('/api/search-areas', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...Rbac.getAuthHeaders(),
     },
     body: JSON.stringify(input),
   });

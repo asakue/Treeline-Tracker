@@ -1,20 +1,26 @@
 /**
- * Сервис пешеходной маршрутизации (Hiking Routing Service)
+ * @fileoverview Hiking Routing Service (OSM Routed-Foot, BRouter, Topographic A* Grid & Terrain Physics)
  * 
- * Поддерживает многоуровневый движок:
- * 1. OpenStreetMap Foot Router (routing.openstreetmap.de/routed-foot) — строит маршруты по реальным пешим тропам,
- *    лесным просекам, горным тропам sac_scale и грунтовкам с минимальной задержкой.
- * 2. OSRM Pedestrian Router (router.project-osrm.org/route/v1/foot) — глобальный пешеходный роутер OSM.
- * 3. BRouter Hiking Engine (brouter.de) — алгоритм с энергозатратным профилем рельефа.
- * 4. DEM Elevation Enrichment — расчет набора/сброса высот через Open-Elevation API и локальную DEM-модель.
+ * Multi-layer routing engine:
+ * 1. OpenStreetMap Foot Router (routing.openstreetmap.de/routed-foot) — real hiking trails, paths, sac_scale.
+ * 2. OSRM Pedestrian Router (router.project-osrm.org/route/v1/foot) — global OSM walking fallback.
+ * 3. BRouter Hiking Engine (brouter.de) — energy-slope aware mountain routing.
+ * 4. Topographic A* Grid Synthesizer — contour-following obstacle avoidance for wild mountain areas.
+ * 5. DEM Elevation Enrichment & Mountain Physics (Tobler, DIN 33466, Minetti, SAC difficulty).
  */
 
 import L from 'leaflet';
 import {
   getElevationForCoordinates,
   calculateElevationStats,
-  type ElevationStats,
 } from '@/features/elevation/lib/elevation-service';
+import {
+  generateDetailedTerrainAnalytics,
+  trackRouteAnalyticsEvent,
+  type DetailedTerrainAnalytics,
+} from './route-analytics';
+import { synthesizeTerrainAwarePath } from './terrain-grid-router';
+import { calculateDistanceMeters } from './terrain-physics';
 
 export interface RouteSuggestion {
   id: string;
@@ -32,7 +38,17 @@ export interface RouteSuggestion {
     descentM: number;
     minElevationM: number;
     maxElevationM: number;
+    movingDurationMinutes?: number;
+    restStops?: number;
+    avgSlopeDeg?: number;
+    maxSlopeDeg?: number;
+    energyKcal?: number;
+    waterLiters?: number;
+    sacDifficulty?: 'T1' | 'T2' | 'T3' | 'T4';
+    ibpIndex?: number;
+    avalancheHazardM?: number;
   };
+  terrainAnalytics?: DetailedTerrainAnalytics;
 }
 
 export interface HikingRouteResult {
@@ -64,23 +80,11 @@ export const HIKING_PROFILES_CONFIG = {
  * Расчет расстояния по формуле гаверсинусов (км)
  */
 export function calculateDistanceKm(points: [number, number][]): number {
-  let totalKm = 0;
+  let totalM = 0;
   for (let i = 1; i < points.length; i++) {
-    const [lat1, lon1] = points[i - 1];
-    const [lat2, lon2] = points[i];
-    const R = 6371; // Радиус Земли в км
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    totalKm += R * c;
+    totalM += calculateDistanceMeters(points[i - 1][0], points[i - 1][1], points[i][0], points[i][1]);
   }
-  return Number(totalKm.toFixed(2));
+  return Number((totalM / 1000).toFixed(2));
 }
 
 /**
@@ -113,14 +117,11 @@ async function fetchOsmFootRoute(
   points: [number, number][]
 ): Promise<{ coordinates: [number, number][]; distanceMeters: number; durationSeconds: number } | null> {
   try {
-    // OSM / OSRM format: lon1,lat1;lon2,lat2;lon3,lat3
     const coordsStr = points.map(([lat, lng]) => `${lng.toFixed(6)},${lat.toFixed(6)}`).join(';');
-    
-    // Пробуем специализированный пешеходный сервер OpenStreetMap
     const osmUrl = `https://routing.openstreetmap.de/routed-foot/route/v1/driving/${coordsStr}?overview=full&geometries=geojson&steps=false`;
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
     
     const res = await fetch(osmUrl, { signal: controller.signal });
     clearTimeout(timeoutId);
@@ -129,7 +130,7 @@ async function fetchOsmFootRoute(
       const data = await res.json();
       if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
         const route = data.routes[0];
-        const rawCoords = route.geometry.coordinates; // [lon, lat]
+        const rawCoords = route.geometry.coordinates;
         const latLngs: [number, number][] = rawCoords.map((c: number[]) => [c[1], c[0]]);
         return {
           coordinates: latLngs,
@@ -139,7 +140,7 @@ async function fetchOsmFootRoute(
       }
     }
   } catch (err) {
-    console.warn('OSM Routed-Foot error, trying OSRM Public:', err);
+    console.warn('OSM Routed-Foot notice, attempting fallback router:', err);
   }
 
   // Запасной пешеходный роутер OSRM
@@ -148,7 +149,7 @@ async function fetchOsmFootRoute(
     const osrmUrl = `https://router.project-osrm.org/route/v1/foot/${coordsStr}?overview=full&geometries=geojson`;
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
     
     const res = await fetch(osrmUrl, { signal: controller.signal });
     clearTimeout(timeoutId);
@@ -167,7 +168,7 @@ async function fetchOsmFootRoute(
       }
     }
   } catch (err) {
-    console.warn('OSRM Foot error:', err);
+    console.warn('OSRM Foot notice:', err);
   }
 
   return null;
@@ -185,7 +186,7 @@ async function fetchBRouter(
     const brouterUrl = `https://brouter.de/brouter?lonlats=${lonLatString}&profile=${profile}&alternativeidx=0&format=geojson`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 4500);
 
     const response = await fetch(brouterUrl, {
       signal: controller.signal,
@@ -250,7 +251,8 @@ function createRouteGeoJson(
 /**
  * Главная функция построения и предложения маршрутов:
  * Принимает координаты старта, финиша и промежуточных точек.
- * Возвращает основной маршрут и варианты (по тропам, пологий/живописный, прямой).
+ * Обогащает треки DEM-высотами, рассчитывает физическую модель Тоблера/DIN 33466,
+ * формирует детальную топографическую аналитику и возвращает основной трек + альтернативы.
  */
 export async function calculateHikingRouteSuggestions(
   start: [number, number],
@@ -277,23 +279,35 @@ export async function calculateHikingRouteSuggestions(
     }
   }
 
-  // Если оба роутера не дали связный трек (например, бездорожье или горы вне размеченных OSM-троп)
+  // Если оба веб-роутера не вернули трек (бездорожье / дикая горная местность):
+  // Запускаем топографический A* Grid Synthesizer с обходом крутых склонов
   if (!primaryCoords || primaryCoords.length < 2) {
-    primaryCoords = generateInterpolatedPath(allKeyPoints, 20);
+    primaryCoords = await synthesizeTerrainAwarePath(allKeyPoints, {
+      profile,
+      corridorWidthMeters: 400,
+    });
     primaryDistanceMeters = calculateDistanceKm(primaryCoords) * 1000;
   }
 
-  // Обогащаем высотами через DEM
+  // Обогащаем основной маршрут высотами DEM
   const demDataPrimary = await getElevationForCoordinates(primaryCoords);
   const primaryElevations = demDataPrimary.map((d) => d.elevation);
   const primaryElevStats = calculateElevationStats(primaryElevations);
-  const primaryDistKm = Number((primaryDistanceMeters / 1000).toFixed(2)) || calculateDistanceKm(primaryCoords);
-  const primaryDurationMinutes = Math.round((primaryDistKm / 4.0) * 60 + (primaryElevStats.ascent / 100) * 10);
+
+  const primaryCoordsWithElev: [number, number, number][] = primaryCoords.map((c, i) => [
+    c[0],
+    c[1],
+    primaryElevations[i] || 0,
+  ]);
+
+  // Комплексный анализ физики рельефа (Тоблер, DIN 33466, Минетти, лавинные зоны)
+  const primaryAnalytics = generateDetailedTerrainAnalytics(primaryCoordsWithElev);
+  const primaryDistKm = primaryAnalytics.summary.totalDistanceKm || calculateDistanceKm(primaryCoords);
 
   const primarySuggestion: RouteSuggestion = {
     id: 'primary-foot-trail',
     name: 'Основной пешеходный трек (по тропам и грунтовкам)',
-    description: 'Оптимальный маршрут по размеченным пешим тропам OSM с минимальным риском непроходимости',
+    description: 'Оптимальный маршрут по размеченным пешим тропам с минимальным риском непроходимости',
     tag: 'Рекомендуемый',
     iconType: 'trail',
     geojson: createRouteGeoJson(primaryCoords, primaryElevations, primaryDistKm, primaryElevStats.ascent),
@@ -301,51 +315,84 @@ export async function calculateHikingRouteSuggestions(
     elevationProfile: buildElevationProfile(primaryCoords, primaryElevations),
     stats: {
       distanceKm: primaryDistKm,
-      durationMinutes: primaryDurationMinutes,
+      durationMinutes: primaryAnalytics.summary.totalDurationMinutes,
       ascentM: primaryElevStats.ascent,
       descentM: primaryElevStats.descent,
       minElevationM: primaryElevStats.minElevation,
       maxElevationM: primaryElevStats.maxElevation,
+      movingDurationMinutes: primaryAnalytics.summary.movingDurationMinutes,
+      restStops: primaryAnalytics.summary.restStopsCount,
+      avgSlopeDeg: primaryAnalytics.summary.avgSlopeDeg,
+      maxSlopeDeg: primaryAnalytics.summary.maxSlopeDeg,
+      energyKcal: primaryAnalytics.summary.totalEnergyKcal,
+      waterLiters: primaryAnalytics.summary.recommendedWaterLiters,
+      sacDifficulty: primaryAnalytics.summary.sacDifficulty,
+      ibpIndex: primaryAnalytics.summary.ibpIndex,
+      avalancheHazardM: primaryAnalytics.summary.avalancheHazardDistanceM,
     },
+    terrainAnalytics: primaryAnalytics,
   };
 
-  // 2. Генерируем альтернативные варианты маршрута (живописный обход и прямой азимут)
+  // 2. Генерируем альтернативные варианты маршрута
   const alternatives: RouteSuggestion[] = [];
 
-  // Вариант 2: Живописный / Панорамный трек (с легким обходом по рельефу)
-  const scenicCoords = generateCurvedScenicPath(allKeyPoints);
-  const demDataScenic = await getElevationForCoordinates(scenicCoords);
-  const scenicElevations = demDataScenic.map((d) => d.elevation);
-  const scenicElevStats = calculateElevationStats(scenicElevations);
-  const scenicDistKm = calculateDistanceKm(scenicCoords);
-  const scenicDurationMinutes = Math.round((scenicDistKm / 3.6) * 60 + (scenicElevStats.ascent / 100) * 10);
+  // Вариант 2: Безопасный / Пологий трек (минимизация уклона и обход крутяков)
+  const safeCoords = await synthesizeTerrainAwarePath(allKeyPoints, {
+    profile: 'hiking-wet',
+    corridorWidthMeters: 650,
+  });
+  const demDataSafe = await getElevationForCoordinates(safeCoords);
+  const safeElevations = demDataSafe.map((d) => d.elevation);
+  const safeElevStats = calculateElevationStats(safeElevations);
+  const safeCoordsWithElev: [number, number, number][] = safeCoords.map((c, i) => [
+    c[0],
+    c[1],
+    safeElevations[i] || 0,
+  ]);
+  const safeAnalytics = generateDetailedTerrainAnalytics(safeCoordsWithElev);
+  const safeDistKm = safeAnalytics.summary.totalDistanceKm || calculateDistanceKm(safeCoords);
 
   alternatives.push({
-    id: 'scenic-ridge-trail',
-    name: 'Панорамный / Пологий трек (вдоль хребта и русел)',
-    description: 'Более пологий набор высоты с видовыми точками и безопасным рельефом',
-    tag: 'Панорамный',
+    id: 'safe-low-slope-trail',
+    name: 'Безопасный пологий трек (обход крутых склонов)',
+    description: 'Более пологий набор высоты с траверсами по рельефу и минимизацией риска срыва',
+    tag: 'Безопасный',
     iconType: 'mountain',
-    geojson: createRouteGeoJson(scenicCoords, scenicElevations, scenicDistKm, scenicElevStats.ascent),
-    coordinates: scenicCoords,
-    elevationProfile: buildElevationProfile(scenicCoords, scenicElevations),
+    geojson: createRouteGeoJson(safeCoords, safeElevations, safeDistKm, safeElevStats.ascent),
+    coordinates: safeCoords,
+    elevationProfile: buildElevationProfile(safeCoords, safeElevations),
     stats: {
-      distanceKm: scenicDistKm,
-      durationMinutes: scenicDurationMinutes,
-      ascentM: scenicElevStats.ascent,
-      descentM: scenicElevStats.descent,
-      minElevationM: scenicElevStats.minElevation,
-      maxElevationM: scenicElevStats.maxElevation,
+      distanceKm: safeDistKm,
+      durationMinutes: safeAnalytics.summary.totalDurationMinutes,
+      ascentM: safeElevStats.ascent,
+      descentM: safeElevStats.descent,
+      minElevationM: safeElevStats.minElevation,
+      maxElevationM: safeElevStats.maxElevation,
+      movingDurationMinutes: safeAnalytics.summary.movingDurationMinutes,
+      restStops: safeAnalytics.summary.restStopsCount,
+      avgSlopeDeg: safeAnalytics.summary.avgSlopeDeg,
+      maxSlopeDeg: safeAnalytics.summary.maxSlopeDeg,
+      energyKcal: safeAnalytics.summary.totalEnergyKcal,
+      waterLiters: safeAnalytics.summary.recommendedWaterLiters,
+      sacDifficulty: safeAnalytics.summary.sacDifficulty,
+      ibpIndex: safeAnalytics.summary.ibpIndex,
+      avalancheHazardM: safeAnalytics.summary.avalancheHazardDistanceM,
     },
+    terrainAnalytics: safeAnalytics,
   });
 
-  // Вариант 3: Прямой горный азимут (кратчайшее соединение контрольных точек)
-  const directCoords = generateInterpolatedPath(allKeyPoints, 12);
+  // Вариант 3: Прямой горный азимут (кратчайшее спортивное соединение точек)
+  const directCoords = generateInterpolatedPath(allKeyPoints, 14);
   const demDataDirect = await getElevationForCoordinates(directCoords);
   const directElevations = demDataDirect.map((d) => d.elevation);
   const directElevStats = calculateElevationStats(directElevations);
-  const directDistKm = calculateDistanceKm(directCoords);
-  const directDurationMinutes = Math.round((directDistKm / 3.0) * 60 + (directElevStats.ascent / 100) * 12);
+  const directCoordsWithElev: [number, number, number][] = directCoords.map((c, i) => [
+    c[0],
+    c[1],
+    directElevations[i] || 0,
+  ]);
+  const directAnalytics = generateDetailedTerrainAnalytics(directCoordsWithElev);
+  const directDistKm = directAnalytics.summary.totalDistanceKm || calculateDistanceKm(directCoords);
 
   alternatives.push({
     id: 'direct-azimuth',
@@ -358,12 +405,35 @@ export async function calculateHikingRouteSuggestions(
     elevationProfile: buildElevationProfile(directCoords, directElevations),
     stats: {
       distanceKm: directDistKm,
-      durationMinutes: directDurationMinutes,
+      durationMinutes: directAnalytics.summary.totalDurationMinutes,
       ascentM: directElevStats.ascent,
       descentM: directElevStats.descent,
       minElevationM: directElevStats.minElevation,
       maxElevationM: directElevStats.maxElevation,
+      movingDurationMinutes: directAnalytics.summary.movingDurationMinutes,
+      restStops: directAnalytics.summary.restStopsCount,
+      avgSlopeDeg: directAnalytics.summary.avgSlopeDeg,
+      maxSlopeDeg: directAnalytics.summary.maxSlopeDeg,
+      energyKcal: directAnalytics.summary.totalEnergyKcal,
+      waterLiters: directAnalytics.summary.recommendedWaterLiters,
+      sacDifficulty: directAnalytics.summary.sacDifficulty,
+      ibpIndex: directAnalytics.summary.ibpIndex,
+      avalancheHazardM: directAnalytics.summary.avalancheHazardDistanceM,
     },
+    terrainAnalytics: directAnalytics,
+  });
+
+  // Трекинг события генерации маршрута в аналитическую систему
+  trackRouteAnalyticsEvent('route_created', {
+    distanceKm: primaryDistKm,
+    durationMinutes: primaryAnalytics.summary.totalDurationMinutes,
+    ascentM: primaryElevStats.ascent,
+    maxSlopeDeg: primaryAnalytics.summary.maxSlopeDeg,
+    sacDifficulty: primaryAnalytics.summary.sacDifficulty,
+    ibpIndex: primaryAnalytics.summary.ibpIndex,
+    hasAvalancheZones: primaryAnalytics.summary.avalancheHazardDistanceM > 0,
+    avalancheDistanceM: primaryAnalytics.summary.avalancheHazardDistanceM,
+    profile,
   });
 
   return {
@@ -420,32 +490,6 @@ export function addGeoJsonRouteToMap(
 
   routeLayer.addTo(map);
   return routeLayer;
-}
-
-// Генерация плавной кривой для альтернативного живописного трека
-function generateCurvedScenicPath(points: [number, number][]): [number, number][] {
-  const res: [number, number][] = [];
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const steps = 18;
-    
-    // Вектор перпендикуляра для живописного обхода
-    const dLat = p2[0] - p1[0];
-    const dLon = p2[1] - p1[1];
-    const perpLat = -dLon * 0.15;
-    const perpLon = dLat * 0.15;
-
-    for (let s = 0; s <= steps; s++) {
-      const t = s / steps;
-      // Параболическое отклонение
-      const bend = Math.sin(t * Math.PI);
-      const lat = p1[0] + dLat * t + perpLat * bend;
-      const lon = p1[1] + dLon * t + perpLon * bend;
-      res.push([lat, lon]);
-    }
-  }
-  return res;
 }
 
 // Генерация интерполированных точек

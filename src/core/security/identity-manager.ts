@@ -8,6 +8,40 @@ import { CryptoService } from './crypto-service';
 
 const STORAGE_KEY = 'treeline_local_identity';
 
+function obfuscateKey(rawKey: string): string {
+  try {
+    const enc = new TextEncoder().encode(rawKey);
+    const salt = 0x5c;
+    const masked = enc.map((b) => b ^ salt);
+    const b64 = typeof Buffer !== 'undefined'
+      ? Buffer.from(masked).toString('base64')
+      : btoa(String.fromCharCode(...masked));
+    return 'obf:v1:' + b64;
+  } catch {
+    return rawKey;
+  }
+}
+
+function deobfuscateKey(stored: string): string {
+  if (typeof stored === 'string' && stored.startsWith('obf:v1:')) {
+    try {
+      const b64 = stored.slice(7);
+      const binStr = typeof Buffer !== 'undefined'
+        ? Buffer.from(b64, 'base64').toString('binary')
+        : atob(b64);
+      const salt = 0x5c;
+      const bytes = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) {
+        bytes[i] = binStr.charCodeAt(i) ^ salt;
+      }
+      return new TextDecoder().decode(bytes);
+    } catch {
+      return stored;
+    }
+  }
+  return stored;
+}
+
 export class IdentityManager {
   /**
    * Retrieves the existing local user identity or generates a new one
@@ -29,7 +63,10 @@ export class IdentityManager {
       if (stored) {
         const parsed = JSON.parse(stored) as UserIdentity;
         if (parsed.userId && parsed.publicKey && parsed.privateKey) {
-          return parsed;
+          return {
+            ...parsed,
+            privateKey: deobfuscateKey(parsed.privateKey),
+          };
         }
       }
     } catch {
@@ -58,7 +95,11 @@ export class IdentityManager {
 
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(identity));
+        const toStore = {
+          ...identity,
+          privateKey: identity.privateKey ? obfuscateKey(identity.privateKey) : undefined,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toStore));
       } catch {
         // Storage quota exceeded or disabled
       }
@@ -102,7 +143,7 @@ export class IdentityManager {
   static setGroupKey(groupId: string, keyBase64: string): void {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem(`treeline_group_key_${groupId}`, keyBase64);
+        localStorage.setItem(`treeline_group_key_${groupId}`, obfuscateKey(keyBase64));
       } catch {
         // LocalStorage disabled or quota exceeded
       }
@@ -117,7 +158,8 @@ export class IdentityManager {
       return null;
     }
     try {
-      return localStorage.getItem(`treeline_group_key_${groupId}`);
+      const raw = localStorage.getItem(`treeline_group_key_${groupId}`);
+      return raw ? deobfuscateKey(raw) : null;
     } catch {
       return null;
     }

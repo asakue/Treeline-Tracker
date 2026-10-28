@@ -154,6 +154,38 @@ class RbacService {
     return { ...this.currentSession };
   }
 
+  public getAuthHeaders(): Record<string, string> {
+    const session = this.getSession();
+    const tokenPayload = {
+      uid: session.uid,
+      role: session.role,
+      displayName: session.displayName,
+      isMfaVerified: session.isMfaVerified,
+      timestamp: Date.now(),
+    };
+    let token = '';
+    try {
+      const jsonStr = JSON.stringify(tokenPayload);
+      if (typeof Buffer !== 'undefined') {
+        token = Buffer.from(jsonStr, 'utf-8').toString('base64');
+      } else {
+        const bytes = new TextEncoder().encode(jsonStr);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        token = btoa(binary);
+      }
+    } catch {
+      token = session.uid;
+    }
+    return {
+      'Authorization': `Bearer ${token}`,
+      'x-user-id': session.uid,
+      'x-user-role': session.role,
+    };
+  }
+
   public hasPermission(permission: keyof typeof ROLE_PERMISSIONS['hiker']): boolean {
     const roleConfig = ROLE_PERMISSIONS[this.currentSession.role];
     if (!roleConfig) return false;

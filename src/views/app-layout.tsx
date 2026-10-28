@@ -8,6 +8,8 @@ import DesktopSidebar from '@/views/desktop-sidebar';
 import MobileBottomNav from '@/views/mobile-bottom-nav';
 import { useAppContext } from '@/entities/app';
 import ViewLoader from '@/shared/ui/view-loader';
+import ViewErrorBoundary from '@/shared/ui/view-error-boundary';
+import { getViewDefinition } from '@/shared/lib/view-registry';
 
 // Direct imports for reliable bundling without missing chunk errors
 import LocationTracker from '@/views/location-tracker';
@@ -33,63 +35,86 @@ const MapRouteDrawer = dynamic(() => import('@/features/route-drawing/ui/map-rou
   loading: () => <ViewLoader />,
 });
 
-
 export default function AppLayout() {
-  const { activeView, viewProps, groupsHook } = useAppContext();
+  const { activeView, setView, viewProps, groupsHook } = useAppContext();
   const isMobile = useIsMobile();
+  const activeDef = getViewDefinition(activeView);
+
+  const renderViewContent = () => {
+    switch (activeView) {
+      case 'tracker':
+        return <LocationTracker />;
+      case 'weather':
+        return <WeatherForecast />;
+      case 'routes':
+        return <RoutePlanner />;
+      case 'analytics':
+        return <AnalyticsView />;
+      case 'search':
+        return <LostHikerTool />;
+      case 'emergency':
+        return <EmergencyServices />;
+      case 'profile':
+        return <ProfilePage />;
+      case 'about':
+        return <AboutUs />;
+      case 'about-app':
+        return <AboutApp />;
+      default:
+        return null;
+    }
+  };
 
   const renderMainContent = () => {
-    // Wait for groups to be loaded from localStorage
-    if (!groupsHook.isLoaded) {
-      return <ViewLoader />;
-    }
-    
-    // Full-screen views that don't need padding
+    // Fullscreen route drawing mode
     if (activeView === 'map' && viewProps?.drawingMode) {
-      return <MapRouteDrawer />;
-    }
-     if (activeView === 'chat') {
-        return <GroupChat />;
-    }
-
-    const isMapView = activeView === 'map';
-
-    // Other views are rendered with padding
-    const views: Record<string, React.ReactNode> = {
-      tracker: <LocationTracker />,
-      weather: <WeatherForecast />,
-      routes: <RoutePlanner />,
-      analytics: <AnalyticsView />,
-      search: <LostHikerTool />,
-      emergency: <EmergencyServices />,
-      profile: <ProfilePage />,
-      about: <AboutUs />,
-      'about-app': <AboutApp />,
-    };
-
-    const currentView = views[activeView];
-
-    // Default to map view if no other view is active
-    if (!currentView && !isMapView) {
-        return (
-             <div className="absolute inset-0">
-                <MapView {...viewProps}/>
-            </div>
-        )
+      return (
+        <ViewErrorBoundary viewName="Редактор маршрута" onGoToMap={() => setView('map')}>
+          <MapRouteDrawer />
+        </ViewErrorBoundary>
+      );
     }
 
-    // Render map in the background for all padded views
+    // Fullscreen group chat
+    if (activeView === 'chat') {
+      return (
+        <ViewErrorBoundary viewName={activeDef.label} onGoToMap={() => setView('map')}>
+          <GroupChat />
+        </ViewErrorBoundary>
+      );
+    }
+
+    const currentViewContent = renderViewContent();
+
+    // Default to map view if no overlay view is active
+    if (!currentViewContent) {
+      return (
+        <div className="absolute inset-0">
+          <ViewErrorBoundary viewName="Интерактивная карта" onGoToMap={() => setView('map')}>
+            <MapView {...viewProps} />
+          </ViewErrorBoundary>
+        </div>
+      );
+    }
+
+    // Render interactive map in background with view content overlaid in glassmorphic container
     return (
       <>
         <div className="absolute inset-0 z-0">
-            <MapView {...viewProps}/>
+          <ViewErrorBoundary viewName="Интерактивная карта" onGoToMap={() => setView('map')}>
+            <MapView {...viewProps} />
+          </ViewErrorBoundary>
         </div>
-        {currentView && (
-            <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm overflow-y-auto pb-16 md:pb-0 animate-fade-in">
-                {currentView}
-            </div>
-        )}
-     </>
+        <div className="absolute inset-0 z-10 bg-background/80 backdrop-blur-sm overflow-y-auto pb-16 md:pb-0 animate-fade-in">
+          <ViewErrorBoundary
+            key={activeView}
+            viewName={activeDef.label}
+            onGoToMap={() => setView('map')}
+          >
+            {currentViewContent}
+          </ViewErrorBoundary>
+        </div>
+      </>
     );
   };
 
@@ -99,11 +124,11 @@ export default function AppLayout() {
         {!isMobile && <DesktopSidebar />}
         <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
           <ExpeditionStatusBar />
-          <div className="flex-1 relative overflow-y-auto min-h-0">
+          <main className="flex-1 relative overflow-y-auto min-h-0" role="main">
             <React.Suspense fallback={<ViewLoader />}>
               {renderMainContent()}
             </React.Suspense>
-          </div>
+          </main>
         </div>
         {isMobile && <MobileBottomNav />}
       </div>

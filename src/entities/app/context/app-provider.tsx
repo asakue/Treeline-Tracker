@@ -4,6 +4,7 @@ import { createContext, useState, useContext, ReactNode, useEffect, useCallback 
 import { useGroups } from '@/entities/group';
 import { useHikerDataSimulation } from '@/entities/hiker';
 import { useRoutes } from '@/entities/route';
+import { Rbac } from '@/core/security/rbac-service';
 
 export type View =
   | 'map'
@@ -101,7 +102,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    fetch('/api/profile')
+    const headers = typeof window !== 'undefined' ? Rbac.getAuthHeaders() : {};
+    fetch('/api/profile', { headers })
       .then((res) => res.json())
       .then((json) => {
         if (json.success && json.data) {
@@ -132,9 +134,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       return updated;
     });
 
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(typeof window !== 'undefined' ? Rbac.getAuthHeaders() : {}),
+    };
+
     fetch('/api/profile', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(data),
     }).catch((err) => console.warn('Profile sync error:', err));
   }, []);

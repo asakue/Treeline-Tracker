@@ -36,7 +36,7 @@ export default function EmergencyServices() {
   const handleSendLocation = () => {
     setIsSendingLocation(true);
 
-    const dispatchEmergency = async (lat: number, lon: number, accuracy = 10, altitude?: number) => {
+    const dispatchEmergency = async (lat?: number, lon?: number, accuracy = 10, altitude?: number) => {
       let senderName = 'Пользователь';
       let senderId = 'user-emergency';
       try {
@@ -48,18 +48,26 @@ export default function EmergencyServices() {
         }
       } catch {}
 
+      const hasCoords = typeof lat === 'number' && typeof lon === 'number';
+
       const emergencyPayload = {
         senderId,
         senderName,
         timestamp: Date.now(),
-        location: {
-          latitude: lat,
-          longitude: lon,
-          altitude,
-          accuracy,
-        },
+        ...(hasCoords
+          ? {
+              location: {
+                latitude: lat,
+                longitude: lon,
+                altitude,
+                accuracy,
+              },
+            }
+          : {}),
         type: 'SOS_SIGNAL' as const,
-        message: 'Экстренный сигнал SOS с точными координатами',
+        message: hasCoords
+          ? 'Экстренный сигнал SOS с точными координатами'
+          : 'Экстренный сигнал SOS (GPS координаты недоступны на устройстве)',
         status: 'ACTIVE' as const,
         acknowledgedBy: [],
       };
@@ -85,30 +93,31 @@ export default function EmergencyServices() {
           await dispatchEmergency(lat, lon, acc, position.coords.altitude || undefined);
           setIsSendingLocation(false);
           toast({
-            title: '🚨 Геолокация SOS отправлена!',
-            description: `Координаты: ${lat}° с.ш., ${lon}° в.д. Точность: ±${acc}м. Спасательные службы уведомлены по радио- и интернет-каналам.`,
+            title: '🚨 Экстренный сигнал SOS отправлен!',
+            description: `Координаты: ${lat}° с.ш., ${lon}° в.д. Точность: ±${acc}м. Сигнал передан по доступным каналам (Mesh/Web).`,
             variant: 'default',
           });
         },
         async (error) => {
           setIsSendingLocation(false);
-          console.warn('Geolocation warning:', error);
-          await dispatchEmergency(43.5, 42.0, 500);
+          console.warn('Geolocation unavailable:', error);
+          // Do NOT send fake coordinates (e.g. 43.5, 42.0). Send GPS-deprived distress alert.
+          await dispatchEmergency();
           toast({
-            title: 'Геолокация SOS отправлена (базовая)',
-            description: 'Координаты базового лагеря (43.5000° с.ш., 42.0000° в.д.) переданы дежурному отряду МЧС.',
-            variant: 'default',
+            title: '⚠️ Сигнал SOS отправлен без GPS координат',
+            description: 'GPS недоступен. Сигнал бедствия передан в сеть. Для гарантированной помощи наберите 112.',
+            variant: 'destructive',
           });
         },
         { timeout: 8000, enableHighAccuracy: true }
       );
     } else {
-      dispatchEmergency(43.5, 42.0, 1000).finally(() => {
+      dispatchEmergency().finally(() => {
         setIsSendingLocation(false);
         toast({
-          title: 'Геолокация SOS отправлена',
-          description: 'Экстренная служба уведомлена по последнему известному сектору.',
-          variant: 'default',
+          title: '⚠️ Сигнал SOS отправлен без GPS координат',
+          description: 'Устройство не поддерживает Geolocation. Для экстренной помощи наберите 112.',
+          variant: 'destructive',
         });
       });
     }

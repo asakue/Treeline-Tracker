@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import L from 'leaflet';
 import { useAppContext } from '@/entities/app';
 import { Button } from '@/shared/ui/button';
@@ -26,6 +26,7 @@ import {
   Plus,
   Minus,
   Maximize2,
+  Activity,
 } from 'lucide-react';
 import { useToast } from '@/shared/hooks/use-toast';
 import { useIsMobile } from '@/shared/hooks/use-mobile';
@@ -37,6 +38,7 @@ import {
   calculateHikingRouteSuggestions,
   type RouteSuggestion,
   type HikingRouteResult,
+  type HikingProfile,
 } from '@/features/routing/lib/brouter-service';
 import {
   getElevationForCoordinates,
@@ -45,37 +47,12 @@ import {
 } from '@/features/elevation/lib/elevation-service';
 import { Badge } from '@/shared/ui/badge';
 import CreateRouteForm from './create-route-form';
-
-// Быстрые пресеты для тестирования конструктора
-const DEMO_PRESETS = [
-  {
-    name: 'Приэльбрусье',
-    desc: 'Терскол ➔ Поляна Азау',
-    points: [
-      [43.256, 42.511],
-      [43.267, 42.482],
-      [43.285, 42.455],
-    ] as [number, number][],
-  },
-  {
-    name: 'Красная Поляна',
-    desc: 'Роза Хутор ➔ Хребет Аибга',
-    points: [
-      [43.672, 40.298],
-      [43.655, 40.312],
-      [43.638, 40.325],
-    ] as [number, number][],
-  },
-  {
-    name: 'Байкал (ББТ)',
-    desc: 'Листвянка ➔ Б. Коты',
-    points: [
-      [51.865, 104.872],
-      [51.884, 104.945],
-      [51.906, 105.068],
-    ] as [number, number][],
-  },
-];
+import RouteTerrainAnalyticsModal from './route-terrain-analytics-modal';
+import {
+  detectRouteRegion,
+  autoDetectRoutingProfile,
+  autoDetectRouteType,
+} from '@/features/routing/lib/auto-classification-service';
 
 // Кастомные стилизованные маркеры точек А (Старт), Б (Финиш) и промежуточных
 const createStartIcon = () =>
@@ -137,10 +114,19 @@ export default function MapRouteDrawer() {
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState<boolean>(false);
   const [isSuggestionsMinimized, setIsSuggestionsMinimized] = useState<boolean>(false);
   const [showDetailedSuggestions, setShowDetailedSuggestions] = useState<boolean>(false);
-  const [showPresetsMenu, setShowPresetsMenu] = useState<boolean>(false);
-  const [showDesktopPresetsMenu, setShowDesktopPresetsMenu] = useState<boolean>(false);
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState<boolean>(false);
+  const [routingProfile, setRoutingProfile] = useState<HikingProfile>('hiking-mountain');
 
   const [elevationStats, setElevationStats] = useState<ElevationStats | null>(null);
+
+  // Автоматическое определение региона и типа маршрута на основе координат и рельефа
+  const detectedRegion = useMemo(() => {
+    return detectRouteRegion(drawingRoutePoints);
+  }, [drawingRoutePoints]);
+
+  const autoRouteType = useMemo(() => {
+    return autoDetectRouteType(drawingRoutePoints, elevationStats?.maxElevation);
+  }, [drawingRoutePoints, elevationStats?.maxElevation]);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [coordsForForm, setCoordsForForm] = useState('');
@@ -218,7 +204,7 @@ export default function MapRouteDrawer() {
 
   // 2. Расчёт и генерация вариантов маршрута от точки А до точки Б
   const requestRouteSuggestions = useCallback(
-    async (points: [number, number][]) => {
+    async (points: [number, number][], profileOverride?: HikingProfile) => {
       if (points.length < 2) {
         setSuggestions([]);
         setShowSuggestionsPanel(false);
@@ -230,8 +216,15 @@ export default function MapRouteDrawer() {
         const start = points[0];
         const finish = points[points.length - 1];
         const waypoints = points.slice(1, -1);
+        const activeProfile = profileOverride || autoDetectRoutingProfile(points);
+        setRoutingProfile(activeProfile);
 
-        const result: HikingRouteResult = await calculateHikingRouteSuggestions(start, finish, waypoints);
+        const result: HikingRouteResult = await calculateHikingRouteSuggestions(
+          start,
+          finish,
+          waypoints,
+          activeProfile
+        );
 
         const allVariants = [result.primaryRoute, ...result.alternatives];
         setSuggestions(allVariants);
@@ -262,9 +255,11 @@ export default function MapRouteDrawer() {
           });
         }
 
+        const regionName = detectRouteRegion(points);
+        const sacLabel = result.primaryRoute.stats.sacDifficulty ? ` [SAC: ${result.primaryRoute.stats.sacDifficulty}]` : '';
         toast({
-          title: 'Маршруты по тропам построены',
-          description: `Найдено ${allVariants.length} варианта от точки А до точки Б. Выберите подходящий в панели внизу.`,
+          title: `Маршрут построен (${regionName})`,
+          description: `Найдено ${allVariants.length} варианта от точки А до точки Б${sacLabel}. Профиль: ${activeProfile}.`,
         });
       } catch (err) {
         console.error('Failed to compute route suggestions:', err);
@@ -539,21 +534,6 @@ export default function MapRouteDrawer() {
     });
   }, [routes]);
 
-  // Запуск пресета
-  const handleApplyPreset = (preset: (typeof DEMO_PRESETS)[0]) => {
-    setDrawingRoutePoints(preset.points);
-    setShowPresetsMenu(false);
-    setShowDesktopPresetsMenu(false);
-    if (mapRef.current) {
-      const bounds = L.latLngBounds(preset.points);
-      mapRef.current.fitBounds(bounds, {
-        paddingTopLeft: isMobile ? [15, 60] : [50, 70],
-        paddingBottomRight: isMobile ? [15, 140] : [50, 80],
-      });
-    }
-    requestRouteSuggestions(preset.points);
-  };
-
   const handleCancel = () => {
     clearDrawingRoutePoints();
     setView('routes');
@@ -565,8 +545,6 @@ export default function MapRouteDrawer() {
     setShowSuggestionsPanel(false);
     setIsSuggestionsMinimized(false);
     setShowDetailedSuggestions(false);
-    setShowPresetsMenu(false);
-    setShowDesktopPresetsMenu(false);
     setElevationStats(null);
     toast({
       title: 'Конструктор очищен',
@@ -749,37 +727,13 @@ export default function MapRouteDrawer() {
                   </span>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPresetsMenu(!showPresetsMenu)}
-                className="h-6 px-1.5 text-[10px] gap-1 shrink-0 font-medium"
-              >
-                <span>Регионы</span>
-                <ChevronDown className={`size-3 transition-transform ${showPresetsMenu ? 'rotate-180' : ''}`} />
-              </Button>
+              {drawingRoutePoints.length > 0 && (
+                <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[10px] font-semibold text-primary shrink-0 max-w-[150px] truncate">
+                  <MapPin className="size-2.5 shrink-0" />
+                  <span className="truncate">{detectedRegion}</span>
+                </div>
+              )}
             </div>
-
-            {showPresetsMenu && (
-              <div className="mt-1.5 bg-card/95 backdrop-blur-md p-2 rounded-lg border border-border shadow-xl space-y-1 animate-in fade-in slide-in-from-top-1 duration-150">
-                <p className="text-[10px] text-muted-foreground px-1 pb-1 border-b border-border/50">
-                  Быстрый выбор региона:
-                </p>
-                {DEMO_PRESETS.map((preset, idx) => (
-                  <button
-                    key={`drawer-preset-mob-${preset.name}-${idx}`}
-                    onClick={() => handleApplyPreset(preset)}
-                    className="w-full text-left p-1.5 rounded bg-muted/50 hover:bg-primary/20 text-foreground text-xs flex items-center justify-between"
-                  >
-                    <span className="font-medium flex items-center gap-1">
-                      <MapPin className="size-3 text-primary" />
-                      {preset.name}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">{preset.desc}</span>
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Варианты маршрутов на мобильном: горизонтальная лента над кнопками */}
@@ -833,6 +787,11 @@ export default function MapRouteDrawer() {
                             <span className="font-semibold text-foreground">{variant.stats.distanceKm} км</span>
                             <span className="text-emerald-600 dark:text-emerald-400 font-medium">+{variant.stats.ascentM}м</span>
                             <span>~{Math.round(variant.stats.durationMinutes / 60)}ч</span>
+                            {variant.stats.sacDifficulty && (
+                              <span className="px-1 py-0.2 rounded font-mono font-bold bg-primary/20 text-primary text-[9px]">
+                                {variant.stats.sacDifficulty}
+                              </span>
+                            )}
                           </div>
                         </div>
                       );
@@ -872,6 +831,21 @@ export default function MapRouteDrawer() {
               )}
               <span>Тропы А➔Б</span>
             </Button>
+
+            {suggestions.length > 0 && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowAnalyticsModal(true)}
+                className="size-8 bg-card/90 border-emerald-500/40 text-emerald-400 relative"
+                title="Анализ рельефа"
+              >
+                <Activity className="size-3.5" />
+                {activeSuggestion?.stats.avalancheHazardM && activeSuggestion.stats.avalancheHazardM > 0 ? (
+                  <span className="absolute top-1 right-1 size-1.5 bg-rose-500 rounded-full animate-ping" />
+                ) : null}
+              </Button>
+            )}
 
             <Button
               variant="secondary"
@@ -952,40 +926,33 @@ export default function MapRouteDrawer() {
 
             <div className="h-4 w-px bg-border/80 shrink-0" />
 
-            {/* Быстрые пресеты регионов через компактное меню */}
-            <div className="relative shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowDesktopPresetsMenu(!showDesktopPresetsMenu)}
-                className="h-7 px-2.5 text-xs gap-1 border-border/80 hover:bg-primary/15 hover:border-primary/40 font-medium whitespace-nowrap"
-              >
+            {/* Автоматически определяемый регион */}
+            {drawingRoutePoints.length > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/80 border border-border text-xs text-foreground font-medium shrink-0">
                 <MapPin className="size-3 text-primary shrink-0" />
-                <span>Регионы</span>
-                <ChevronDown className={`size-3 transition-transform ${showDesktopPresetsMenu ? 'rotate-180' : ''}`} />
-              </Button>
+                <span className="text-muted-foreground text-[11px]">Регион:</span>
+                <span className="font-semibold text-primary max-w-[180px] truncate">{detectedRegion}</span>
+              </div>
+            )}
 
-              {showDesktopPresetsMenu && (
-                <div className="absolute top-full left-0 mt-1.5 w-64 p-1.5 rounded-lg bg-card/98 backdrop-blur-md border border-border shadow-xl space-y-1 z-[1100] animate-in fade-in slide-in-from-top-1 duration-150">
-                  <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-border/50">
-                    Примеры готовых треков:
-                  </div>
-                  {DEMO_PRESETS.map((preset, idx) => (
-                    <button
-                      key={`desk-preset-item-${preset.name}-${idx}`}
-                      onClick={() => handleApplyPreset(preset)}
-                      className="w-full text-left px-2 py-1.5 rounded-md hover:bg-primary/15 text-foreground text-xs flex flex-col transition-colors group"
-                    >
-                      <span className="font-semibold text-foreground group-hover:text-primary flex items-center gap-1.5">
-                        <MapPin className="size-3 text-primary shrink-0" />
-                        {preset.name}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground pl-4.5">{preset.desc}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Автоматически определяемый тип маршрута */}
+            {drawingRoutePoints.length > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-secondary/80 border border-border text-xs text-foreground font-medium shrink-0">
+                <Mountain className="size-3 text-emerald-500 shrink-0" />
+                <span className="text-muted-foreground text-[11px]">Тип:</span>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'text-[10px] font-semibold py-0 px-1.5 border-none',
+                    autoRouteType === 'Горный'
+                      ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                  )}
+                >
+                  {autoRouteType}
+                </Badge>
+              </div>
+            )}
 
             {/* Кнопка закрытия */}
             <Button
@@ -1108,6 +1075,29 @@ export default function MapRouteDrawer() {
                               </span>
                             )}
 
+                            {/* Категория сложности SAC */}
+                            {variant.stats.sacDifficulty && (
+                              <span
+                                className={cn(
+                                  "text-[9px] font-mono font-bold px-1 py-0.2 rounded leading-none shrink-0",
+                                  isSelected
+                                    ? "bg-primary-foreground/30 text-primary-foreground"
+                                    : "bg-emerald-500/20 text-emerald-500 border border-emerald-500/30"
+                                )}
+                                title={`Шкала сложности SAC: ${variant.stats.sacDifficulty}`}
+                              >
+                                {variant.stats.sacDifficulty}
+                              </span>
+                            )}
+
+                            {/* Предупреждение о лавиноопасном уклоне (28°-45°) */}
+                            {variant.stats.avalancheHazardM && variant.stats.avalancheHazardM > 0 ? (
+                              <span
+                                className="size-1.5 rounded-full bg-rose-500 shrink-0 animate-pulse"
+                                title={`Лавиноопасный уклон: ${variant.stats.avalancheHazardM}м (28°-45°)`}
+                              />
+                            ) : null}
+
                             {isSelected && <Check className="size-3 stroke-[2.5] ml-0.5 shrink-0 text-primary-foreground" />}
                           </button>
                         );
@@ -1137,6 +1127,20 @@ export default function MapRouteDrawer() {
                       title={showDetailedSuggestions ? 'Скрыть карточки описания' : 'Показать карточки с описанием'}
                     >
                       <Info className="size-3.5 text-primary" />
+                    </Button>
+
+                    {/* Кнопка подробного анализа рельефа и физики (DIN 33466 / Тоблер) */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowAnalyticsModal(true)}
+                      className="size-7 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 shrink-0 relative"
+                      title="Анализ рельефа, уклонов и безопасности (DIN 33466 / Тоблер)"
+                    >
+                      <Activity className="size-3.5" />
+                      {activeSuggestion?.stats.avalancheHazardM && activeSuggestion.stats.avalancheHazardM > 0 ? (
+                        <span className="absolute top-1 right-1 size-1.5 bg-rose-500 rounded-full animate-ping" />
+                      ) : null}
                     </Button>
 
                     {/* Кнопка перестроения */}
@@ -1211,6 +1215,17 @@ export default function MapRouteDrawer() {
                   >
                     <span>Варианты ({suggestions.length})</span>
                     <ChevronUp className="size-3.5" />
+                  </Button>
+
+                  <Button
+                    onClick={() => setShowAnalyticsModal(true)}
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1 px-2 border-border/80 hover:bg-emerald-500/10 text-emerald-500 shrink-0"
+                    title="Анализ рельефа (DIN 33466 / Тоблер)"
+                  >
+                    <Activity className="size-3.5" />
+                    <span className="hidden sm:inline">Анализ</span>
                   </Button>
 
                   <Button
@@ -1294,6 +1309,13 @@ export default function MapRouteDrawer() {
         onOpenChange={setIsFormOpen}
         onRouteSubmit={handleRouteSubmit}
         initialCoordinates={coordsForForm}
+        initialStats={activeSuggestion?.stats}
+      />
+
+      <RouteTerrainAnalyticsModal
+        open={showAnalyticsModal}
+        onOpenChange={setShowAnalyticsModal}
+        suggestion={activeSuggestion || null}
       />
     </div>
   );

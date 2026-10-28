@@ -6,8 +6,27 @@
 import type { IGroupRepository } from './interfaces';
 import type { Group, Member, LocationUpdate } from '../domain/types';
 import { GroupSchema } from '../domain/schemas';
+import { Rbac } from '../security/rbac-service';
 
 const STORAGE_KEY = 'hiker_groups_data';
+
+function toApiUrl(path: string): string {
+  if (typeof window !== 'undefined' && window.location?.origin && window.location.origin !== 'null') {
+    try {
+      return new URL(path, window.location.origin).toString();
+    } catch {
+      // fallback
+    }
+  }
+  return path.startsWith('http') ? path : `http://localhost:3000${path}`;
+}
+
+function getAuthHeaders(extra: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...extra,
+    ...(typeof window !== 'undefined' ? Rbac.getAuthHeaders() : {}),
+  };
+}
 
 export class LocalStorageGroupRepository implements IGroupRepository {
   private isClient(): boolean {
@@ -30,7 +49,10 @@ export class LocalStorageGroupRepository implements IGroupRepository {
 
       // Try fetching from server API if local is empty
       try {
-        const res = await fetch('/api/groups');
+        const res = await fetch(toApiUrl('/api/groups'), {
+          headers: getAuthHeaders(),
+          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(2000) : undefined,
+        });
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.data)) {
@@ -62,9 +84,9 @@ export class LocalStorageGroupRepository implements IGroupRepository {
 
     // Sync to server in background
     if (this.isClient()) {
-      fetch('/api/groups', {
+      fetch(toApiUrl('/api/groups'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(validated),
       }).catch((e) => console.warn('Failed to sync group to server:', e));
     }
@@ -100,9 +122,9 @@ export class LocalStorageGroupRepository implements IGroupRepository {
 
     // Sync to server
     if (this.isClient()) {
-      fetch('/api/groups', {
+      fetch(toApiUrl('/api/groups'), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(withOcc),
       }).catch((e) => console.warn('Failed to sync group update to server:', e));
     }
@@ -125,8 +147,9 @@ export class LocalStorageGroupRepository implements IGroupRepository {
 
     // Sync deletion to server
     if (this.isClient()) {
-      fetch(`/api/groups?id=${encodeURIComponent(id)}`, {
+      fetch(toApiUrl(`/api/groups?id=${encodeURIComponent(id)}`), {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       }).catch((e) => console.warn('Failed to sync group deletion to server:', e));
     }
 

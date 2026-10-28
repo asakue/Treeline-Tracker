@@ -104,7 +104,7 @@ export interface EmergencyEvent {
   senderId: string;
   senderName: string;
   timestamp: number; // Unix epoch ms
-  location: {
+  location?: {
     latitude: number;
     longitude: number;
     altitude?: number;

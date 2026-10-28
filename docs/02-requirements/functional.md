@@ -2,7 +2,7 @@
 
 **Статус документа:** `COMPLETED & FULLY VERIFIED`  
 **Категория:** Требования (`02-requirements`)  
-**Актуализация:** Октябрь 2026 г. (Версия кодовой базы: 0.5.0)
+**Актуализация:** Октябрь 2026 г. (Версия кодовой базы: 0.5.4)
 
 ---
 
@@ -42,3 +42,8 @@
 | **FR-025** | Журнал аудита событий | Потоковый аудит-лог событий по категориям `[GPS]`, `[SECURITY]`, `[TRANSPORT]`, `[OCC]`, `[AUTH]`, `[SOS]` с возможностью экспорта в JSON. | Medium | `IMPLEMENTED` | `src/core/transport/audit-logger.ts`, `src/components/audit-log-modal.tsx` |
 | **FR-026** | Безопасность API & Rate Limiting | Скользящий оконный Rate Limiter по IP-адресу (60 rpm), строгая Zod-валидация входящих DTO и санитизация ошибок API. | High | `IMPLEMENTED` | `src/core/security/api-security.ts`, `src/app/api/*` |
 | **FR-027** | Заголовки безопасности OWASP | Строгие политики CSP (OpenStreetMap tiles, Google Gemini, Firebase), HSTS (max-age 1 год), X-Frame-Options: DENY, X-Content-Type-Options: nosniff. | High | `IMPLEMENTED` | `next.config.ts` |
+| **FR-028** | Автономное определение региона (Zero-Select) | Система автоматически определяет горный регион (Кавказ, Алтай, Хибины, Урал, Байкал, Камчатка, Саяны) по координатам точек маршрута через полигональные границы без ручного ввода. | High | `IMPLEMENTED` | `src/features/routing/lib/auto-classification-service.ts`, `src/features/route-drawing` |
+| **FR-029** | Физико-рельефная автоклассификация | Система автоматически выбирает профиль проходимости (`foot-hiking`, `foot-walking`, `mountain-climbing`) и присваивает категорию сложности по шкале SAC (T1–T4) на основе DEM-уклонов и абсолютной высоты. | High | `IMPLEMENTED` | `src/features/routing/lib/auto-classification-service.ts`, `src/features/routing/lib/terrain-physics.ts` |
+| **FR-030** | Биомеханический расчет энергозатрат и темпа | Расчет расхода энергии в килокалориях по полиному Альберто Минетти ($C_w$) и ходового времени по функции темпа Тоблера с адаптивными штрафами за крутые уклоны в интерактивном модальном окне `RouteTerrainAnalyticsModal`. | High | `IMPLEMENTED` | `src/features/routing/lib/terrain-physics.ts`, `src/features/route-drawing/ui/route-terrain-analytics-modal.tsx` |
+| **FR-031** | Модульный реестр представлений и изоляция сбоев | Декомпозиция экранов через реестр `ViewRegistry`, ленивая загрузка (`React.lazy`) и изоляция сбоев через `ViewErrorBoundary`, предотвращающая крах приложения при ошибке отдельного представления. | High | `IMPLEMENTED` | `src/features/view-registry/view-registry.ts`, `src/features/view-registry/ui/view-error-boundary.tsx` |
+| **FR-032** | Оффлайн-кэширование тайлов и Zero-Hang Firestore | Автоматическое сохранение тайлов карты OpenStreetMap в IndexedDB (`treeline_map_tiles_cache`) через Service Worker, и предотвращение 10-секундных сетевых зависаний Firestore SDK через `withFirestoreTimeout` (2000 мс). | Critical | `IMPLEMENTED` | `src/core/map/offline-map-cache.ts`, `public/sw.js`, `src/firebase/firestore-resilience.ts` |
