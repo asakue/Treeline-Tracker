@@ -33,8 +33,6 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo
@@ -64,5 +62,4 @@ secrets.json
 .agents/
 
 
-.vercel
 .env*

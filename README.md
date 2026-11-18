@@ -94,7 +94,6 @@
 ├── docs/                       # Полная архитектурная и проектная документация (C4, ADR, RBAC)
 ├── docker-compose.yml          # Оркестрация стека (PostgreSQL/PostGIS, Mosquitto MQTT, Backend)
 ├── mosquitto.conf              # Конфигурация MQTT-брокера
-├── vercel.json                 # Конфигурация деплоя веб-клиента на Vercel
 ├── .env.example                # Шаблон переменных окружения
 └── vitest.config.ts            # Конфигурация Vitest для монорепозитория
 ```
@@ -168,7 +167,7 @@
 | **Искусственный интеллект** | Google Genkit (`@genkit-ai/google-genai`), Gemini 2.5 Flash для вероятностного SAR-поиска |
 | **Криптография** | W3C Web Crypto API (Ed25519 подписи, AES-256-GCM AEAD, SHA-256), JWT + Refresh Tokens, Argon2 |
 | **Тестирование** | Vitest 4.x, React Testing Library, JSDOM, Standalone E2E Runner (141 тест, 4 уровня) |
-| **Оркестрация** | Docker, Docker Compose, Vercel |
+| **Оркестрация** | Docker, Docker Compose, Linux / Cloud VPS |
 
 ---
 
