@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Mountain,
@@ -8,6 +8,10 @@ import {
   Info,
   Code,
   User,
+  Shield,
+  ShieldCheck,
+  Siren,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -24,12 +28,33 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/shared/ui/avatar';
 import { cn } from '@/shared/lib/utils';
 import { useAppContext } from '@/entities/app';
 import { getDesktopPrimaryNav, getDesktopSafetyNav } from '@/shared/lib/view-registry';
-
+import { Rbac, ROLE_PERMISSIONS } from '@/core/security/rbac-service';
+import type { UserRole } from '@/core/domain/types';
 
 const DesktopSidebar = memo(() => {
   const { activeView, setView, userProfile } = useAppContext();
+  const [role, setRole] = useState<UserRole>(() => Rbac.getSession().role);
+
+  useEffect(() => {
+    return Rbac.subscribe((sess) => setRole(sess.role));
+  }, []);
 
   const userInitial = userProfile.displayName ? userProfile.displayName.charAt(0).toUpperCase() : '';
+
+  const getRoleDotClass = (r: UserRole) => {
+    switch (r) {
+      case 'hiker':
+        return 'bg-emerald-500';
+      case 'guide':
+        return 'bg-amber-500';
+      case 'rescuer':
+        return 'bg-rose-500';
+      case 'admin':
+        return 'bg-sky-500';
+      default:
+        return 'bg-primary';
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -41,9 +66,13 @@ const DesktopSidebar = memo(() => {
               tooltip="Дозор"
             >
               <Mountain className="text-primary shrink-0" />
-              <span className="group-data-[collapsible=icon]:hidden">
-                Дозор
-              </span>
+              <div className="flex flex-col group-data-[collapsible=icon]:hidden leading-tight">
+                <span className="font-semibold tracking-wide">Дозор</span>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono uppercase">
+                  <span className={cn('size-1.5 rounded-full shrink-0', getRoleDotClass(role))} />
+                  {ROLE_PERMISSIONS[role].label.split(' ')[0]}
+                </span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -52,7 +81,7 @@ const DesktopSidebar = memo(() => {
 
       <SidebarContent className="flex flex-col p-2">
         <SidebarMenu>
-          {getDesktopPrimaryNav().map(({ id, icon: Icon, label, tooltip }) => (
+          {getDesktopPrimaryNav(role).map(({ id, icon: Icon, label, tooltip }) => (
             <SidebarMenuItem key={`desktop-nav-${id}`}>
               <SidebarMenuButton
                 onClick={() => setView(id)}
@@ -67,7 +96,7 @@ const DesktopSidebar = memo(() => {
             </SidebarMenuItem>
           ))}
           <SidebarSeparator key="sidebar-menu-separator" className="my-2" />
-          {getDesktopSafetyNav().map(
+          {getDesktopSafetyNav(role).map(
             ({ id, icon: Icon, label, tooltip }) => (
               <SidebarMenuItem key={`desktop-sec-${id}`}>
                 <SidebarMenuButton

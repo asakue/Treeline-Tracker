@@ -4,6 +4,7 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
+import type { UserRole } from '@/core/domain/types';
 import {
   Map,
   Users,
@@ -42,6 +43,7 @@ export interface ViewDefinition {
   category: ViewCategory;
   fullScreen?: boolean;
   isEmergency?: boolean;
+  allowedRoles?: UserRole[];
 }
 
 export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
@@ -53,6 +55,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     icon: Map,
     category: 'navigation',
     fullScreen: true,
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   tracker: {
     id: 'tracker',
@@ -61,6 +64,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Трекер группы и статус туристов',
     icon: Users,
     category: 'navigation',
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   routes: {
     id: 'routes',
@@ -69,6 +73,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Планировщик и архив горных маршрутов',
     icon: Waypoints,
     category: 'navigation',
+    allowedRoles: ['guide', 'rescuer', 'admin'],
   },
   analytics: {
     id: 'analytics',
@@ -77,6 +82,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Сводный отчёт по походам (ФЗ-05)',
     icon: BarChart3,
     category: 'navigation',
+    allowedRoles: ['guide', 'admin'],
   },
   chat: {
     id: 'chat',
@@ -86,6 +92,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     icon: MessageSquare,
     category: 'navigation',
     fullScreen: true,
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   weather: {
     id: 'weather',
@@ -94,14 +101,16 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Прогноз погоды и лавинная опасность',
     icon: CloudSun,
     category: 'navigation',
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   search: {
     id: 'search',
-    label: 'SOS Поиск',
+    label: 'SOS Поиск (SAR)',
     shortLabel: 'Поиск',
     tooltip: 'AI-генерация поисковых полигонов для потерявшегося туриста',
     icon: Search,
     category: 'safety',
+    allowedRoles: ['rescuer', 'admin'],
   },
   emergency: {
     id: 'emergency',
@@ -111,6 +120,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     icon: Siren,
     category: 'safety',
     isEmergency: true,
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   profile: {
     id: 'profile',
@@ -119,6 +129,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Настройки профиля и криптографическая безопасность',
     icon: User,
     category: 'info',
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   about: {
     id: 'about',
@@ -127,6 +138,7 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Информация о проекте Treeline',
     icon: Info,
     category: 'info',
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
   'about-app': {
     id: 'about-app',
@@ -135,14 +147,23 @@ export const VIEW_REGISTRY: Record<ViewId, ViewDefinition> = {
     tooltip: 'Архитектурный стек и протоколы',
     icon: Code,
     category: 'info',
+    allowedRoles: ['hiker', 'guide', 'rescuer', 'admin'],
   },
 };
 
 /**
+ * Filter items by user role
+ */
+function filterByRole(items: ViewDefinition[], role?: UserRole): ViewDefinition[] {
+  if (!role) return items;
+  return items.filter((item) => !item.allowedRoles || item.allowedRoles.includes(role));
+}
+
+/**
  * Returns desktop sidebar primary navigation items
  */
-export function getDesktopPrimaryNav(): ViewDefinition[] {
-  return [
+export function getDesktopPrimaryNav(role?: UserRole): ViewDefinition[] {
+  const items = [
     VIEW_REGISTRY.map,
     VIEW_REGISTRY.tracker,
     VIEW_REGISTRY.routes,
@@ -150,19 +171,37 @@ export function getDesktopPrimaryNav(): ViewDefinition[] {
     VIEW_REGISTRY.chat,
     VIEW_REGISTRY.weather,
   ];
+  return filterByRole(items, role);
 }
 
 /**
  * Returns desktop sidebar safety & emergency items
  */
-export function getDesktopSafetyNav(): ViewDefinition[] {
-  return [VIEW_REGISTRY.search, VIEW_REGISTRY.emergency];
+export function getDesktopSafetyNav(role?: UserRole): ViewDefinition[] {
+  const items = [VIEW_REGISTRY.search, VIEW_REGISTRY.emergency];
+  return filterByRole(items, role);
 }
 
 /**
  * Returns mobile bottom bar quick navigation items
  */
-export function getMobileBottomNavItems(): ViewDefinition[] {
+export function getMobileBottomNavItems(role?: UserRole): ViewDefinition[] {
+  if (role === 'hiker') {
+    return [
+      VIEW_REGISTRY.map,
+      VIEW_REGISTRY.tracker,
+      VIEW_REGISTRY.chat,
+      VIEW_REGISTRY.emergency,
+    ];
+  }
+  if (role === 'rescuer') {
+    return [
+      VIEW_REGISTRY.map,
+      VIEW_REGISTRY.tracker,
+      VIEW_REGISTRY.search,
+      VIEW_REGISTRY.emergency,
+    ];
+  }
   return [
     VIEW_REGISTRY.map,
     VIEW_REGISTRY.tracker,
@@ -174,8 +213,8 @@ export function getMobileBottomNavItems(): ViewDefinition[] {
 /**
  * Returns mobile drawer "More" menu items
  */
-export function getMobileDrawerItems(): ViewDefinition[] {
-  return [
+export function getMobileDrawerItems(role?: UserRole): ViewDefinition[] {
+  const items = [
     VIEW_REGISTRY.chat,
     VIEW_REGISTRY.tracker,
     VIEW_REGISTRY.routes,
@@ -185,6 +224,7 @@ export function getMobileDrawerItems(): ViewDefinition[] {
     VIEW_REGISTRY.about,
     VIEW_REGISTRY['about-app'],
   ];
+  return filterByRole(items, role);
 }
 
 export function getViewDefinition(viewId: ViewId): ViewDefinition {

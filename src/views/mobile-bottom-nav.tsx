@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/shared/ui/button';
 import { cn } from '@/shared/lib/utils';
@@ -14,11 +14,19 @@ import {
 import MobileMenu from './mobile-menu';
 import { useAppContext, type View } from '@/entities/app';
 import { getMobileBottomNavItems } from '@/shared/lib/view-registry';
+import { Rbac } from '@/core/security/rbac-service';
+import type { UserRole } from '@/core/domain/types';
 
 const MobileBottomNav = memo(() => {
   const { activeView, setView } = useAppContext();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const bottomNavItems = getMobileBottomNavItems();
+  const [role, setRole] = useState<UserRole>(() => Rbac.getSession().role);
+
+  useEffect(() => {
+    return Rbac.subscribe((sess) => setRole(sess.role));
+  }, []);
+
+  const bottomNavItems = getMobileBottomNavItems(role);
 
   const handleViewChange = (view: View) => {
     setView(view);

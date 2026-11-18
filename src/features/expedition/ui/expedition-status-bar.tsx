@@ -19,9 +19,10 @@ import type { UserRole, AuditLogEntry } from '@/core/domain/types';
 import type { TransportStatus } from '@/core/transport/interfaces';
 import { LocationFilter } from '@/core/location';
 import { TelemetryIndicators } from './telemetry-indicators';
-import { AuthDialog } from './auth-dialog';
+import { AuthModal } from '@/features/auth';
 import { ChaosDialog } from './chaos-dialog';
 import { AuditLogDialog } from './audit-log-dialog';
+import { RoleActionHud } from './role-action-hud';
 
 export default function ExpeditionStatusBar() {
   // Live status states
@@ -162,6 +163,14 @@ export default function ExpeditionStatusBar() {
           isCharging={isCharging}
         />
 
+        {/* Contextual Role Operations HUD */}
+        <div className="hidden md:flex items-center">
+          <RoleActionHud
+            onOpenChaos={() => setIsChaosModalOpen(true)}
+            onOpenAudit={() => setIsAuditModalOpen(true)}
+          />
+        </div>
+
         {/* Right controls: RBAC Role switcher, Chaos button, Audit log button */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           <Button
@@ -209,7 +218,7 @@ export default function ExpeditionStatusBar() {
       </header>
 
       {/* Modular Modals */}
-      <AuthDialog
+      <AuthModal
         open={isAuthModalOpen}
         onOpenChange={setIsAuthModalOpen}
         session={session}

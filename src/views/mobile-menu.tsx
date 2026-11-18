@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   Avatar,
   AvatarFallback,
@@ -7,10 +8,13 @@ import {
 } from '@/shared/ui/avatar';
 import { Button } from '@/shared/ui/button';
 import { Separator } from '@/shared/ui/separator';
-import { User } from 'lucide-react';
+import { User, Shield } from 'lucide-react';
 import type { View } from '@/entities/app';
 import { useAppContext } from '@/entities/app';
 import { getMobileDrawerItems } from '@/shared/lib/view-registry';
+import { Rbac, ROLE_PERMISSIONS } from '@/core/security/rbac-service';
+import type { UserRole } from '@/core/domain/types';
+import { RoleActionHud } from '@/features/expedition/ui/role-action-hud';
 
 type MobileMenuProps = {
   onNavigate: (view: View) => void;
@@ -18,12 +22,18 @@ type MobileMenuProps = {
 
 export default function MobileMenu({ onNavigate }: MobileMenuProps) {
   const { activeView, userProfile } = useAppContext();
+  const [role, setRole] = useState<UserRole>(() => Rbac.getSession().role);
+
+  useEffect(() => {
+    return Rbac.subscribe((sess) => setRole(sess.role));
+  }, []);
+
   const userInitial = userProfile.displayName ? userProfile.displayName.charAt(0).toUpperCase() : '';
   
   return (
-    <div className="p-4 flex flex-col">
+    <div className="p-4 flex flex-col space-y-3">
       <div
-        className="flex items-center gap-3 mb-4 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+        className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
         onClick={() => onNavigate('profile')}
       >
         <Avatar className="size-10">
@@ -40,22 +50,30 @@ export default function MobileMenu({ onNavigate }: MobileMenuProps) {
           </AvatarFallback>
         </Avatar>
         <div>
-          <p className="font-semibold text-foreground">
+          <p className="font-semibold text-foreground text-sm">
             {userProfile.displayName || 'Мой профиль'}
           </p>
-          <p className="text-xs text-muted-foreground">Нажмите для редактирования</p>
+          <p className="text-xs text-muted-foreground font-mono">
+            {ROLE_PERMISSIONS[role].label}
+          </p>
         </div>
       </div>
-      <Separator className="mb-4" />
-      <div className="grid grid-cols-1 gap-2">
-        {getMobileDrawerItems().map(({ id, icon: Icon, label }) => (
+
+      <div className="py-1">
+        <RoleActionHud />
+      </div>
+
+      <Separator />
+
+      <div className="grid grid-cols-1 gap-1.5 pt-1">
+        {getMobileDrawerItems(role).map(({ id, icon: Icon, label }) => (
           <Button
             key={id}
             variant={activeView === id ? 'secondary' : 'ghost'}
-            className="justify-start gap-3 h-12 text-base"
+            className="justify-start gap-3 h-10 text-sm font-medium"
             onClick={() => onNavigate(id)}
           >
-            <Icon className="size-5 text-muted-foreground" />
+            <Icon className="size-4.5 text-muted-foreground" />
             <span>{label}</span>
           </Button>
         ))}
