@@ -29,6 +29,7 @@
 * [Системная архитектура](./03-architecture/system.md) — многоуровневая архитектура C4 (Клиент, Бэкенд, PostGIS, MQTT, LoRa Mesh).
 * [Фронтенд-архитектура](./03-architecture/frontend.md) — модульный реестр экранов View Registry, ViewErrorBoundary, физика рельефа и Leaflet.
 * [Бэкенд и хранение данных](./03-architecture/backend.md) — архитектура Express, Drizzle ORM, пространственные запросы PostGIS, REST-репозитории, WebSocket engine.
+* [Развертывание на Railway](./railway-deployment.md) — пошаговое руководство по облачному деплою стека на платформе Railway.
 * [Коммуникационный слой](./03-architecture/communication.md) — Transport Manager, многоканальная модель: HTTPS REST ➔ WSS ➔ LoRa Mesh ➔ Оффлайн-очередь IndexedDB.
 * [Потоки данных (Data Flow)](./03-architecture/data-flow.md) — схемы прохождения пакетов от GPS-приемника до отображения на тактической карте.
 * **[Архитектурные решения (ADR)](./03-architecture/adr/):**

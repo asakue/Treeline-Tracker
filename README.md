@@ -265,6 +265,7 @@ npx tsx tests/e2e/runner.ts --filter="SOS"
 
 * 📐 [Архитектурная спецификация (C4, PostGIS схемы, OCC)](./docs/architecture.md)
 * 🖥️ [Архитектура бэкенда и хранилищ данных (Express, PostGIS, WS)](./docs/03-architecture/backend.md)
+* 🚂 [Руководство по развертыванию на Railway](./docs/railway-deployment.md)
 * 📡 [Коммуникационный слой и гибридный транспорт](./docs/03-architecture/communication.md)
 * 🔄 [Потоки данных и жизненный цикл пакетов](./docs/03-architecture/data-flow.md)
 * 📋 [Функциональные требования (FR-001 – FR-032)](./docs/02-requirements/functional.md)
