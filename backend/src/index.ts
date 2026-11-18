@@ -6,6 +6,7 @@
 import * as http from 'node:http';
 import * as dotenv from 'dotenv';
 import { db, queryClient } from './db/client.js';
+import { runAutoMigrations } from './db/migrate.js';
 import { createDrizzleRepositories } from './repositories/drizzle.repositories.js';
 import { TokenService } from './auth/jwt.js';
 import { rateLimiter } from './middleware/rate-limiter.js';
@@ -18,6 +19,9 @@ const HOST = process.env.HOST || '0.0.0.0';
 
 async function bootstrap() {
   console.log('[Treeline Backend] Initializing service...');
+
+  // Auto-migrate schema on bootstrap if not already initialized
+  await runAutoMigrations(queryClient);
 
   // Initialize Drizzle Repositories and Token Service
   const repos = createDrizzleRepositories(db);
