@@ -13,17 +13,13 @@
 graph TD
     User(["👤 Пользователь"]) --> AuthChoice{"Выбор сценария входа"}
 
-    subgraph Online_Layer ["1. Облачный контур (Firebase Auth и OAuth)"]
+    subgraph Online_Layer ["1. Серверный контур (Standalone Express JWT & RBAC)"]
         AuthChoice -->|"Email / Password"| EmailAuth["Email + Password"]
-        AuthChoice -->|"OAuth 2.0"| GoogleAuth["Вход через Google"]
-        AuthChoice -->|"Быстрый старт"| AnonAuth["Анонимный гостевой вход"]
-        AuthChoice -->|"Спасатели / Администраторы"| MFAAuth["MFA TOTP / SMS 2FA"]
-        
-        EmailAuth --> JWTIssuer["Генерация JWT с Custom Claims"]
-        GoogleAuth --> JWTIssuer
-        AnonAuth --> JWTIssuer
-        MFAAuth --> JWTIssuer
-        JWTIssuer --> RBACGuard["RBAC Guard (hiker, guide, rescuer, admin)"]
+        AuthChoice -->|"Криптостойкий хэш"| HashArgon["Хеширование паролей Argon2 / PBKDF2"]
+        EmailAuth --> HashArgon
+        HashArgon --> JWTIssuer["Выпуск JWT Access (15м) + Refresh (7д)"]
+        JWTIssuer --> TokenRotation["Ротация Refresh-токена"]
+        TokenRotation --> RBACGuard["RBAC Guard (hiker, guide, rescuer, admin)"]
     end
 
     subgraph Offline_Crypto_Layer ["2. Оффлайн-контур (Zero-Knowledge Web Crypto)"]
@@ -33,7 +29,7 @@ graph TD
         GroupAuth --> MeshSign["Локальная цифровая подпись пакетов в эфире"]
     end
 
-    RBACGuard --> AccountLinker["Связка: Offline Crypto Profile ⟷ Cloud Account"]
+    RBACGuard --> AccountLinker["Связка: Offline Crypto Profile ⟷ Server Identity"]
     MeshSign --> AccountLinker
 ```
 

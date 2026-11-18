@@ -98,7 +98,7 @@ if (filesToCheck.length === 0) {
       .filter(Boolean);
   } catch {
     // Fallback if git is not initialized
-    filesToCheck = ['.env.example', 'apphosting.yaml', 'package.json', 'next.config.ts'];
+    filesToCheck = ['.env.example', 'package.json', 'next.config.ts'];
   }
 }
 

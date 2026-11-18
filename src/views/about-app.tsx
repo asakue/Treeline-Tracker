@@ -85,7 +85,7 @@ const techStack = [
   { name: 'Tailwind CSS & shadcn/ui', category: 'Интерфейс', description: 'Адаптивный дизайн, поддержка светлой и темной тем, доступность WCAG.' },
   { name: 'Recharts', category: 'Визуализация', description: 'Интерактивные графики перепада высот и профиля маршрута.' },
   { name: 'Vitest & Testing Library', category: 'Тестирование', description: 'Комплексные юнит- и интеграционные тесты криптографии и компонентов.' },
-  { name: 'Firebase Firestore & Auth', category: 'Хранилище / Синхронизация', description: 'Real-time синхронизация данных групп, persistentLocalCache и RBAC/MFA.' },
+  { name: 'PostgreSQL & REST / WebSocket', category: 'Хранилище / Синхронизация', description: 'Real-time синхронизация данных групп, PostGIS геоданные, offline fallback и RBAC/MFA.' },
 ];
 
 const projectStructure = `

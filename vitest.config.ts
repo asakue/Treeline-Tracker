@@ -9,12 +9,14 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     include: ['**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['**/node_modules/**', 'tests/e2e/**'],
     css: false,
     pool: 'threads',
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@treeline/lora-mesh': path.resolve(__dirname, './packages/lora-mesh/src'),
     },
   },
 });

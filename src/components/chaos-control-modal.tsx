@@ -150,7 +150,7 @@ export function ChaosControlModal({ isOpen, onClose, transportStatus }: ChaosCon
                     Искусственный обрыв сотовой сети
                   </Label>
                   <p className="text-xs text-muted-foreground">
-                    Блокирует отправку в Cloud Firestore
+                    Блокирует отправку на сервер (REST API / WebSocket)
                   </p>
                 </div>
               </div>

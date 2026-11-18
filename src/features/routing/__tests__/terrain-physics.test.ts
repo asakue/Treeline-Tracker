@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   calculateToblerSpeed,
   calculateDin33466DurationMinutes,
@@ -15,6 +15,16 @@ import {
   generateDetailedTerrainAnalytics,
 } from '../lib/route-analytics';
 import { synthesizeTerrainAwarePath } from '../lib/terrain-grid-router';
+
+vi.mock('@/features/elevation/lib/elevation-service', () => ({
+  getElevationForCoordinates: vi.fn(async (coords: [number, number][]) => {
+    return coords.map(([lat, lng], idx) => ({
+      latitude: lat,
+      longitude: lng,
+      elevation: 1500 + Math.sin(lat * 100) * 100 + (idx % 5) * 20,
+    }));
+  }),
+}));
 
 describe('Terrain Physics & Topographic Routing Engine', () => {
   describe('Tobler Hiking Function (calculateToblerSpeed)', () => {

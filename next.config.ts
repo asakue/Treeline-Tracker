@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  transpilePackages: ['@treeline/lora-mesh'],
   output: 'standalone',
   typescript: {
     ignoreBuildErrors: false,
@@ -45,7 +46,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self)',
+            value: 'camera=(), microphone=(), geolocation=(self), serial=(self), bluetooth=(self)',
           },
           {
             key: 'Content-Security-Policy',
@@ -56,7 +57,7 @@ const nextConfig: NextConfig = {
                 : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https://picsum.photos https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.tile.opentopomap.org https://tile.opentopomap.org https://*.opentopomap.org https://*.tile-cyclosm.openstreetmap.fr https://*.openstreetmap.fr https://*.basemaps.cartocdn.com https://cdnjs.cloudflare.com https://unpkg.com",
-              "connect-src 'self' ws: wss: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.tile.opentopomap.org https://tile.opentopomap.org https://*.opentopomap.org https://*.tile-cyclosm.openstreetmap.fr https://*.openstreetmap.fr https://*.basemaps.cartocdn.com https://routing.openstreetmap.de https://router.project-osrm.org https://brouter.de https://api.open-meteo.com https://generativelanguage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com",
+              "connect-src 'self' ws: wss: https://*.tile.openstreetmap.org https://tile.openstreetmap.org https://*.tile.opentopomap.org https://tile.opentopomap.org https://*.opentopomap.org https://*.tile-cyclosm.openstreetmap.fr https://*.openstreetmap.fr https://*.basemaps.cartocdn.com https://routing.openstreetmap.de https://router.project-osrm.org https://brouter.de https://api.open-meteo.com https://generativelanguage.googleapis.com",
               "worker-src 'self' blob:",
               "font-src 'self' data:",
               "frame-ancestors 'none'",

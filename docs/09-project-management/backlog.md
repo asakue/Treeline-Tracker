@@ -65,3 +65,13 @@
 | **TASK-053** | Защита API-роутов, скользящий Rate Limiter и строгая Zod-валидация | High | TASK-004 | Модуль `src/core/security/api-security.ts`, лимиты 60 req/min, унификация ответов 422/429 | `DONE` | FR-026, NFR-016 |
 | **TASK-054** | Комплексный тестовый сьют E2EE и Backend Security (9 тестов) | Critical | TASK-050..053 | Сьют `backend-security-e2ee.test.ts` (100% pass, суммарно 67 тестов / 7 сьютов) | `DONE` | NFR-013, NFR-002 |
 | **TASK-055** | Харденинг HTTP заголовков безопасности по стандарту OWASP | High | TASK-006 | Strict CSP, HSTS (max-age 1 год), X-Frame-Options: DENY в `next.config.ts` | `DONE` | FR-027, NFR-017 |
+| **TASK-056** | Физиологическое моделирование энергозатрат Минетти | High | TASK-009 | Полином Alberto E. Minetti для расчета расхода калорий туриста по уклонам | `DONE` | FR-028 |
+| **TASK-057** | Функция темпа Тоблера и альпийская шкала сложности SAC (T1–T4) | High | TASK-056 | Расчет ходового времени с поправками на крутизну склонов и SAC-категоризация | `DONE` | FR-029 |
+| **TASK-058** | Автономная классификация региона и профиля (Zero-Select, ADR-010) | High | TASK-057 | Полигональный детектор горных районов и эндпоинт `/api/routes/classify` | `DONE` | FR-030 |
+| **TASK-059** | Модульный реестр экранов View Registry и изоляция сбоев (ADR-011) | High | TASK-004 | Реестр `view-registry.ts`, ленивая загрузка чанков и `ViewErrorBoundary` | `DONE` | NFR-018 |
+| **TASK-060** | Двухуровневый оффлайн-кэш тайлов карты (IndexedDB + Service Worker) | High | TASK-023 | Модуль `offline-map-cache.ts` и перехватчик `public/sw.js` для OpenTopoMap | `DONE` | FR-031 |
+| **TASK-061** | Автономный бэкенд на PostgreSQL 16 + PostGIS 3.4 (ADR-012) | Critical | TASK-004 | Node.js / Express сервер, Drizzle ORM, пространственные таблицы и GiST-индексы | `DONE` | FR-032 |
+| **TASK-062** | Потоковый WebSocket-движок с комнатами и экстренным SOS Bypass | Critical | TASK-061 | Комнаты групп, heartbeat-контроль, доставка сообщений и мгновенный SOS | `DONE` | FR-033 |
+| **TASK-063** | Пакет LoRa Meshtastic Wire Protocol (`@treeline/lora-mesh`) | Critical | TASK-007 | Protobuf кодеки, WebSerial FSM `0x94 0xC3`, BLE GATT, MQTT Bridge | `DONE` | FR-034 |
+| **TASK-064** | Комплексный 4-уровневый E2E тестовый раннер (141 тест) | Critical | TASK-061..063 | Standalone тестовый раннер `tests/e2e/runner.ts` со 100% успехом | `DONE` | NFR-019 |
+| **TASK-065** | Docker Compose оркестрация полного стека | High | TASK-061 | `docker-compose.yml` (PostgreSQL/PostGIS, Mosquitto MQTT, Express Backend) | `DONE` | NFR-020 |

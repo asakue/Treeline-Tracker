@@ -16,13 +16,15 @@ graph TD
     subgraph Treeline ["Система Treeline Tracker"]
         App["Веб / Мобильный клиент Next.js"]
         Engine["Core Domain & Security Engine"]
-        RepoLayer["Repository & Local Storage Layer"]
+        RepoLayer["Repository Container (REST & LocalStorage)"]
     end
 
-    Cloud[("Облачный бэкенд / Firebase Firestore")]
-    MeshNode[("Симулированный узел MeshCore LoRa")]
-    MockGateway["Симулированный шлюз спасателей 112"]
-    GeminiAI["Google Gemini 2.5 Flash AI Model"]
+    BackendService["Express Standalone REST & WS Backend"]
+    PostGIS[("СУБД PostgreSQL 16 + PostGIS")]
+    MosquittoMQTT["MQTT Broker Eclipse Mosquitto 2.0"]
+    MeshNode[("Аппаратный узел LoRa Meshtastic / @treeline/lora-mesh")]
+    MockGateway["Шлюз экстренных служб SAR / 112"]
+    GeminiAI["Google Gemini 2.5 Flash AI Model (Genkit)"]
     BRouterEngine["BRouter Hiking Routing Service"]
     DEMService["Open-Elevation DEM Service"]
 
@@ -38,11 +40,12 @@ graph TD
     Engine --> RepoLayer
     RepoLayer --> Engine
 
-    RepoLayer -->|"Синхронизация"| Cloud
-    Cloud -->|"Реактивные обновления"| RepoLayer
-    Engine -->|"LoRa радиоэфир (симуляция)"| MeshNode
-    MeshNode -->|"Прием пакетов"| Engine
-    Engine -->|"SOS оповещение"| MockGateway
+    RepoLayer -->|"REST API / WebSocket"| BackendService
+    BackendService -->|"SQL / Spatial GiST"| PostGIS
+    BackendService -->|"MQTT Bridge"| MosquittoMQTT
+    Engine -->|"LoRa радиоканал (WebSerial/BLE)"| MeshNode
+    MeshNode -->|"Прием пакетов Protobuf"| Engine
+    BackendService -->|"SOS оповещение"| MockGateway
     Engine -->|"Анализ секторов поиска"| GeminiAI
     GeminiAI -->|"Полигон вероятной зоны"| Engine
     Engine -->|"Построение пешеходных треков"| BRouterEngine
@@ -317,7 +320,8 @@ classDiagram
 ┌───────────────────────────────────▼────────────────────────────────────┐
 │                       5. Infrastructure & Storage                      │
 │   - Repositories: IGroupRepository, IRouteRepository, IOfflineQueue    │
-│   - Drivers: LocalStorage, IndexedDB, Firebase Firestore (Adapter)     │
+│   - Production Drivers: REST API Repositories, LocalStorage, IndexedDB │
+│   - Server Stack: Express REST API, PostgreSQL 16 + PostGIS, Mosquitto │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 

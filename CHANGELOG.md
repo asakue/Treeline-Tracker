@@ -4,6 +4,36 @@ All notable changes to the **Treeline Tracker** project are documented in this f
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-18
+
+### Added
+- **Standalone Self-Hosted Backend & PostGIS (ADR-012)**:
+  - Completely removed Google Cloud Firestore, Firebase App Hosting, and Firestore Security Rules.
+  - Implemented standalone Node.js / Express backend service (`backend/`) with TypeScript 5, Drizzle ORM, and PostgreSQL 16 + PostGIS 3.4 (`postgis/postgis:16-3.4-alpine`).
+  - Spatial containment queries, circular and polygonal geofence calculations natively executed in PostGIS (`ST_Contains`, `ST_DWithin`, `ST_MakePoint`) with GiST spatial indexing.
+  - Standalone REST API v1 endpoints: `/api/v1/auth`, `/api/v1/teams`, `/api/v1/tracks`, `/api/v1/waypoints`, `/api/v1/geofences`, `/api/v1/telemetry`, `/api/v1/emergency`, `/api/v1/mesh`.
+  - High-performance WebSocket real-time engine (`backend/src/websocket/`) with squad telemetry rooms, heartbeat keepalive, rate-limited channels, and emergency SOS priority bypass.
+  - Mosquitto 2.0 MQTT broker integration for telemetry and mesh gateway ingress/egress.
+  - Full Docker Compose orchestration (`docker-compose.yml`) for PostgreSQL/PostGIS, Mosquitto MQTT, and Treeline Backend.
+- **Frontend Decoupled REST Repositories (`src/infrastructure/repositories`)**:
+  - Implemented `RestGroupRepository`, `RestRouteRepository`, `RestEmergencyRepository`, `RestLocationRepository` with seamless offline fallback to `LocalStorageRepository`.
+  - Added URL mapping translation between Next.js co-located routes and standalone backend v1 routes.
+- **LoRa Mesh Hardware Subsystem (`packages/lora-mesh`)**:
+  - Created standalone workspace package `@treeline/lora-mesh`.
+  - Pure TypeScript Protobuf binary encoding/decoding for Meshtastic wire protocol (MeshPacket, Data, Position, NodeInfo/User, Telemetry, Waypoint).
+  - Hardware transports: WebSerial FSM (framing bytes `0x94 0xC3`), WebBluetooth GATT, MQTT Bridge, Mock Mesh Transport.
+  - Mesh engine with node database (NodeDB) and packet deduplication.
+- **Master E2E Test Suite & Test Runner (`tests/e2e`)**:
+  - Standalone test runner (`tests/e2e/runner.ts`) with zero external dependencies supporting CLI filtering and timing.
+  - 4 Tiers of testing:
+    - Tier 1: Feature Coverage (60 tests)
+    - Tier 2: Boundary & Corner Cases (60 tests)
+    - Tier 3: Cross-Feature Combinations (15 tests)
+    - Tier 4: Real-World Operational Scenarios (6 tests)
+  - 141 E2E tests passing with 100% success rate.
+- **Monorepo Test Suite Expansion**:
+  - 290 unit & integration Vitest tests + 141 E2E runner tests = **431 automated tests passing (100% pass rate)**.
+
 ## [0.5.4] - 2026-10-28
 
 ### Added

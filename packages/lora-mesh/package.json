@@ -1,0 +1,24 @@
+{
+  "name": "@treeline/lora-mesh",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./protobuf": "./src/protobuf/index.ts",
+    "./transports": "./src/transports/index.ts",
+    "./codec": "./src/codec/index.ts",
+    "./crypto": "./src/crypto/index.ts",
+    "./routing": "./src/routing/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}
