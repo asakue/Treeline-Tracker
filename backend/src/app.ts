@@ -46,6 +46,11 @@ export function createApp(config: AppConfig): Express {
   // 4. API v1 Router
   app.use('/api/v1', createApiRouter(config.repos, config.tokenService));
 
+  // Healthcheck aliases
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
+  });
+
   // 5. Root route
   app.get('/', (_req, res) => {
     res.json({
