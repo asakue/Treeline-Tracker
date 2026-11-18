@@ -66,3 +66,4 @@ export async function runAutoMigrations(client: postgres.Sql) {
     // Do not throw fatal error if already exists or non-critical error
   }
 }
+
