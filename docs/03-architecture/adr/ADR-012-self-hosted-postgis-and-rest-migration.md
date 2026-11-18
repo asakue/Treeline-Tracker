@@ -54,3 +54,4 @@
 
 ## 4. Статус совместимости
 * Документ [ADR-003](./ADR-003-why-firebase-and-mock-repositories.md) объявляется **SUPERSEDED** (замененным).
+

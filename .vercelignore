@@ -1,0 +1,9 @@
+# Files and directories to ignore during Vercel deployment
+backend/
+tests/
+docs/
+.githooks/
+.github/
+.aistudio/
+docker-compose.yml
+mosquitto.conf

@@ -1,8 +1,10 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@treeline/lora-mesh'],
-  output: 'standalone',
+  outputFileTracingRoot: path.join(__dirname),
+  ...(process.env.BUILD_STANDALONE === 'true' ? { output: 'standalone' as const } : {}),
   typescript: {
     ignoreBuildErrors: false,
   },
