@@ -161,6 +161,7 @@ export class HybridPasswordService implements IPasswordHasher {
   private async initArgon2(): Promise<void> {
     try {
       // Dynamic import to avoid crash if argon2 is not installed or failed compiling
+      // @ts-ignore
       const argon2Module = await import('argon2');
       this.argon2Hasher = new Argon2idPasswordHasher(argon2Module);
       this.activeHasher = this.argon2Hasher;
